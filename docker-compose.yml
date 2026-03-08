@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: quantum
+      POSTGRES_PASSWORD: quantum
+      POSTGRES_DB: quantum_control_plane
+    ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      QCP_DATABASE_URL: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
+      QCP_REDIS_URL: redis://redis:6379/0
+    ports: ["8000:8000"]
+    depends_on: [postgres, redis]
+
+  worker:
+    build:
+      context: .
+      dockerfile: workers/quantum-runner/Dockerfile
+    environment:
+      QCP_DATABASE_URL: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
+      QCP_REDIS_URL: redis://redis:6379/0
+    depends_on: [postgres, redis]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8000
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+    depends_on: [api]
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3001:3000"]
+
+  loki:
+    image: grafana/loki:3.2.1
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./infra/observability/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+    ports: ["3100:3100"]
+
+volumes:
+  postgres_data:

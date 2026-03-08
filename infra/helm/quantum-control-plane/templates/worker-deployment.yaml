@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qcp-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qcp-worker
+  template:
+    metadata:
+      labels:
+        app: qcp-worker
+    spec:
+      containers:
+        - name: worker
+          image: {{ .Values.image.worker }}
+          env:
+            - name: QCP_DATABASE_URL
+              value: {{ .Values.env.databaseUrl | quote }}
+            - name: QCP_REDIS_URL
+              value: {{ .Values.env.redisUrl | quote }}

@@ -1,0 +1,8 @@
+image:
+  api: ghcr.io/example/qcp-api:latest
+  worker: ghcr.io/example/qcp-worker:latest
+  web: ghcr.io/example/qcp-web:latest
+
+env:
+  databaseUrl: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
+  redisUrl: redis://redis:6379/0

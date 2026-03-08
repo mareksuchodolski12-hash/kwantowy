@@ -1,0 +1,6 @@
+apiVersion: v2
+name: quantum-control-plane
+description: Quantum Control Plane workloads
+type: application
+version: 0.1.0
+appVersion: "0.3.0"

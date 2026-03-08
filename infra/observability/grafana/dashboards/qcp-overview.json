@@ -1,0 +1,13 @@
+{
+  "title": "QCP Overview",
+  "panels": [
+    {"type": "timeseries", "title": "Submitted jobs", "targets": [{"expr": "qcp_jobs_submitted_total"}]},
+    {"type": "timeseries", "title": "Succeeded jobs", "targets": [{"expr": "qcp_jobs_succeeded_total"}]},
+    {"type": "timeseries", "title": "Failed jobs", "targets": [{"expr": "qcp_jobs_failed_total"}]},
+    {"type": "timeseries", "title": "Retries", "targets": [{"expr": "qcp_job_retries_total"}]},
+    {"type": "timeseries", "title": "Queue latency", "targets": [{"expr": "histogram_quantile(0.95, sum(rate(qcp_queue_latency_seconds_bucket[5m])) by (le))"}]},
+    {"type": "timeseries", "title": "Execution duration", "targets": [{"expr": "histogram_quantile(0.95, sum(rate(qcp_execution_duration_seconds_bucket[5m])) by (le))"}]}
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}
