@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qcp-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qcp-api
+  template:
+    metadata:
+      labels:
+        app: qcp-api
+    spec:
+      containers:
+        - name: api
+          image: {{ .Values.image.api }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: QCP_DATABASE_URL
+              value: {{ .Values.env.databaseUrl | quote }}
+            - name: QCP_REDIS_URL
+              value: {{ .Values.env.redisUrl | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qcp-api
+spec:
+  selector:
+    app: qcp-api
+  ports:
+    - port: 8000
+      targetPort: 8000
