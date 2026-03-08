@@ -28,6 +28,7 @@ jobs:
       - run: python -m pip install -e services/api[dev]
       - run: npm install
         working-directory: apps/web
+      - run: make check-conflicts
       - run: make lint
       - run: make typecheck
       - run: make test

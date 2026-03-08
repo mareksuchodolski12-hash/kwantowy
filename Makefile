@@ -68,3 +68,6 @@ format:
 
 demo:
 	./scripts/demo_local.sh
+
+check-conflicts:
+	./scripts/check_conflict_markers.sh
