@@ -1,0 +1,56 @@
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
+export type Provider = 'local_simulator' | 'ibm_runtime';
+
+export interface Job {
+  id: string;
+  experiment_id: string;
+  status: string;
+  provider: Provider;
+  attempts: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubmitPayload {
+  name: string;
+  description?: string;
+  provider: Provider;
+  circuit: { qasm: string; shots: number };
+  retry_policy: { max_attempts: number; timeout_seconds: number };
+}
+
+export async function submitJob(payload: SubmitPayload) {
+  const res = await fetch(`${BASE_URL}/v1/jobs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('submit failed');
+  return res.json();
+}
+
+export async function listJobs(): Promise<{ jobs: Job[] }> {
+  const res = await fetch(`${BASE_URL}/v1/jobs`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('list failed');
+  return res.json();
+}
+
+export async function getJob(id: string): Promise<Job> {
+  const res = await fetch(`${BASE_URL}/v1/jobs/${id}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('job fetch failed');
+  return res.json();
+}
+
+export async function getResult(id: string) {
+  const res = await fetch(`${BASE_URL}/v1/jobs/${id}/result`, { cache: 'no-store' });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+
+export async function getComparison(): Promise<Record<string, { runs: number; avg_duration_ms: number }>> {
+  const res = await fetch(`${BASE_URL}/v1/comparison`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('comparison fetch failed');
+  return res.json();
+}

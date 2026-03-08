@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qcp-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qcp-worker
+  template:
+    metadata:
+      labels:
+        app: qcp-worker
+    spec:
+      containers:
+        - name: worker
+          image: {{ .Values.image.worker.repository }}:{{ .Values.image.worker.tag }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          env:
+            - name: QCP_DATABASE_URL
+              value: {{ .Values.env.databaseUrl | quote }}
+            - name: QCP_REDIS_URL
+              value: {{ .Values.env.redisUrl | quote }}

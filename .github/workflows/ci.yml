@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: actions/cache@v4
+        with:
+          path: .bin
+          key: ${{ runner.os }}-tools-${{ hashFiles('scripts/install_conftest.sh', 'scripts/install_helm.sh', 'Makefile') }}
+      - run: make tools
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e packages/contracts
+      - run: python -m pip install -e services/api[dev]
+      - run: npm install
+        working-directory: apps/web
+      - run: make lint
+      - run: make typecheck
+      - run: make test
+      - run: make policy
+
+  build-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/api/Dockerfile
+          push: false
+          tags: qcp-api:ci
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: workers/quantum-runner/Dockerfile
+          push: false
+          tags: qcp-worker:ci
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: qcp-web:ci
+
+  security-and-sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+      - uses: anchore/sbom-action@v0
+        with:
+          path: .
+          output-file: sbom.spdx.json

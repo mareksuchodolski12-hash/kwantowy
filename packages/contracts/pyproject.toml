@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantum-control-plane-contracts"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.7.0"]
+
+[tool.setuptools.packages.find]
+include = ["quantum_contracts*"]

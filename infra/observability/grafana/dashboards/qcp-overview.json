@@ -1,0 +1,17 @@
+{
+  "title": "QCP Overview",
+  "schemaVersion": 38,
+  "version": 2,
+  "panels": [
+    {"type": "timeseries", "title": "Submitted jobs", "targets": [{"expr": "sum by(provider)(qcp_jobs_submitted_total)"}]},
+    {"type": "timeseries", "title": "Succeeded jobs", "targets": [{"expr": "sum by(provider)(qcp_jobs_succeeded_total)"}]},
+    {"type": "timeseries", "title": "Failed jobs", "targets": [{"expr": "sum by(provider)(qcp_jobs_failed_total)"}]},
+    {"type": "timeseries", "title": "State transitions", "targets": [{"expr": "sum by(provider,to_state)(rate(qcp_job_state_transitions_total[5m]))"}]},
+    {"type": "timeseries", "title": "Retry budget pressure", "targets": [{"expr": "sum by(provider)(rate(qcp_job_retries_total[5m]))"}]},
+    {"type": "timeseries", "title": "Provider failures by class", "targets": [{"expr": "sum by(provider,error_class)(rate(qcp_provider_errors_total[5m]))"}]},
+    {"type": "timeseries", "title": "Poll cycles", "targets": [{"expr": "sum by(provider)(rate(qcp_provider_poll_cycles_total[5m]))"}]},
+    {"type": "timeseries", "title": "Queue depth", "targets": [{"expr": "qcp_queue_depth"}]},
+    {"type": "timeseries", "title": "p95 Queue latency", "targets": [{"expr": "histogram_quantile(0.95, sum(rate(qcp_queue_latency_seconds_bucket[5m])) by (le,provider))"}]},
+    {"type": "timeseries", "title": "p95 Execution duration", "targets": [{"expr": "histogram_quantile(0.95, sum(rate(qcp_execution_duration_seconds_bucket[5m])) by (le,provider))"}]}
+  ]
+}

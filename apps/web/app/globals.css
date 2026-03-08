@@ -1,0 +1,54 @@
+body {
+  font-family: Inter, system-ui, sans-serif;
+  margin: 0;
+  background: #f5f7fa;
+  color: #1f2937;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #111827;
+  color: white;
+}
+
+.header nav {
+  display: flex;
+  gap: 16px;
+}
+
+.header a {
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 24px auto;
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 8px;
+}
+
+input,
+select,
+textarea,
+button {
+  width: 100%;
+  margin: 6px 0 12px;
+  padding: 8px;
+}

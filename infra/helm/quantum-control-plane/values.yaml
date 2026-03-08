@@ -1,0 +1,14 @@
+image:
+  api:
+    repository: ghcr.io/example/qcp-api
+    tag: sha-local
+  worker:
+    repository: ghcr.io/example/qcp-worker
+    tag: sha-local
+  web:
+    repository: ghcr.io/example/qcp-web
+    tag: sha-local
+
+env:
+  databaseUrl: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
+  redisUrl: redis://redis:6379/0
