@@ -35,4 +35,8 @@ htmlcov/
 services/api/test_api.db
 services/api/test_worker.db
 services/api/test_idempotency.db
+services/api/test_platform.db
+services/api/test_providers.db
 test_api.db
+test_platform.db
+test_providers.db

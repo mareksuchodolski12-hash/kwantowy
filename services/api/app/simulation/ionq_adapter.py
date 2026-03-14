@@ -18,5 +18,5 @@ class IonqAdapter(ExecutionProviderAdapter):
 
     async def run(self, payload: CircuitPayload, timeout_seconds: int, job_id: str) -> ExecutionResult:
         raise NotImplementedError(
-            "IonQ provider is not yet implemented. " "Set QCP_IONQ_API_TOKEN and install the IonQ SDK to enable."
+            "IonQ provider is not yet implemented. Set QCP_IONQ_API_TOKEN and install the IonQ SDK to enable."
         )

@@ -38,4 +38,3 @@ async def require_api_key(
         raise HTTPException(status_code=401, detail="Invalid or inactive API key")
     await repo.touch(model.id)
     await session.commit()
-

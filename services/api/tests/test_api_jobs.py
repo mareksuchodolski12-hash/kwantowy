@@ -111,4 +111,3 @@ def test_unauthorized_request(client: TestClient) -> None:
 def test_invalid_api_key(client: TestClient) -> None:
     response = client.get("/v1/jobs", headers={"X-API-Key": "qcp_invalid"})
     assert response.status_code == 401
-
