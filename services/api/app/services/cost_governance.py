@@ -159,8 +159,8 @@ class CostGovernanceService:
         budget = await self.budgets.get_by_scope(scope, scope_id)
         if budget is None:
             return True
-        remaining = budget.monthly_limit_usd - budget.current_spend_usd
-        return estimated_cost <= remaining
+        remaining: float = budget.monthly_limit_usd - budget.current_spend_usd
+        return bool(estimated_cost <= remaining)
 
     async def record_cost(
         self,

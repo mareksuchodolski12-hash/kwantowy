@@ -62,7 +62,7 @@ class WorkflowRepository:
         )
         self.session.add(model)
         await self.session.flush()
-        return model.id  # type: ignore[return-value]
+        return model.id
 
     async def get_definition(self, workflow_id: UUID) -> WorkflowDefinition | None:
         row = await self.session.scalar(select(WorkflowModel).where(WorkflowModel.id == workflow_id))
@@ -122,7 +122,7 @@ class WorkflowRepository:
             workflow_name=name,
             state=WorkflowState(row.state),
             current_step=row.current_step,
-            step_results=row.step_results,  # type: ignore[arg-type]
+            step_results=row.step_results,
             created_at=row.created_at,
             updated_at=row.updated_at,
         )
@@ -141,7 +141,7 @@ class WorkflowRepository:
                     workflow_name=name,
                     state=WorkflowState(row.state),
                     current_step=row.current_step,
-                    step_results=row.step_results,  # type: ignore[arg-type]
+                    step_results=row.step_results,
                     created_at=row.created_at,
                     updated_at=row.updated_at,
                 )
@@ -223,7 +223,7 @@ class WorkflowEngine:
             step_results=step_results,
         )
 
-        return await self.repo.get_run(run.id)  # type: ignore[return-value]
+        return await self.repo.get_run(run.id)
 
     @staticmethod
     def _execute_step(
