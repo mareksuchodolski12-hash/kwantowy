@@ -41,8 +41,9 @@ make web          # Start web console on port 3000 (terminal 3)
 ```
 
 > **Tip:** For zero-Docker local development using SQLite + fakeredis, run
-> `python start_local.py` instead of steps 2–5 above, then `make web` in a
-> separate terminal.
+> `python start_local.py` (or `make dev`) instead of steps 2–5 above, then
+> `make web` in a separate terminal.  `start_local.py` automatically creates
+> `apps/web/.env.local` with the API key so the frontend can authenticate.
 
 ### Full Docker Stack
 
@@ -192,6 +193,7 @@ make benchmark  # Run auto-benchmark worker
 | `make api` | Start API server locally (port 8000) |
 | `make worker` | Start job worker locally |
 | `make web` | Start web console locally (port 3000) |
+| `make dev` | Start API + worker locally (SQLite + fakeredis, no Docker) |
 | `make lint` | Run ruff + eslint |
 | `make typecheck` | Run mypy + tsc |
 | `make test` | Run pytest |

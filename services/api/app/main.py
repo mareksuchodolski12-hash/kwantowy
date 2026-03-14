@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.core.config import settings
 from app.core.correlation import CorrelationIdMiddleware
 from app.core.logging import configure_logging
 from app.core.observability import MetricsMiddleware, configure_tracing, instrument_fastapi
@@ -19,6 +21,13 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     license_info={"name": "MIT"},
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(MetricsMiddleware)

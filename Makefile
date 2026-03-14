@@ -1,4 +1,4 @@
-.PHONY: bootstrap up up-all up-infra down lint typecheck test test-integration format migrate worker api web policy build demo benchmark
+.PHONY: bootstrap up up-all up-infra down lint typecheck test test-integration format migrate worker api web policy build demo benchmark dev
 
 bootstrap:
 	python -m pip install --upgrade pip
@@ -71,3 +71,8 @@ demo:
 
 benchmark:
 	PYTHONPATH=services/api python workers/benchmark-runner/benchmark_worker.py
+
+dev:
+	@echo "Starting Quantum Control Plane in local dev mode (SQLite + fakeredis)…"
+	@echo "API will be at http://localhost:8000  |  Web UI: run 'make web' in another terminal"
+	python start_local.py

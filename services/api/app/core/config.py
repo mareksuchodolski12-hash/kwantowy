@@ -20,6 +20,9 @@ class Settings(BaseSettings):
 
     otel_exporter_otlp_endpoint: str | None = None
 
+    # CORS
+    cors_origins: str = "http://localhost:3000"
+
     # Worker settings
     stuck_job_timeout_seconds: int = 120
 
