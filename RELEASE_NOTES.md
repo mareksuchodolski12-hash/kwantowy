@@ -8,7 +8,7 @@
 
 Quantum Control Plane is an open developer platform for quantum computing.
 Submit QASM circuits, orchestrate multi-step experiments, benchmark providers,
-and visualise results through a unified interface. Think MLflow or Airflow,
+and visualize results through a unified interface. Think MLflow or Airflow,
 but for quantum.
 
 ---
