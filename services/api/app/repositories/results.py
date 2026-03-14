@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from quantum_contracts import ExecutionResult
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,7 +25,7 @@ class ResultRepository:
         await self.session.flush()
         return result
 
-    async def get_by_job_id(self, job_id: object) -> ExecutionResult | None:
+    async def get_by_job_id(self, job_id: UUID) -> ExecutionResult | None:
         model = await self.session.scalar(select(ResultModel).where(ResultModel.job_id == job_id))
         if model is None:
             return None

@@ -35,7 +35,7 @@ class IbmRuntimeAdapter(ExecutionProviderAdapter):
             data = result[0].data.c.get_counts()
             return {str(k): int(v) for k, v in data.items()}, job.job_id()
 
-        counts, _remote_id = await asyncio.wait_for(asyncio.to_thread(_run), timeout=timeout_seconds)
+        counts, remote_id = await asyncio.wait_for(asyncio.to_thread(_run), timeout=timeout_seconds)
         return ExecutionResult(
             job_id=job_id,
             provider=self.provider,
@@ -44,4 +44,5 @@ class IbmRuntimeAdapter(ExecutionProviderAdapter):
             shots=payload.shots,
             duration_ms=int((time.monotonic() - started) * 1000),
             completed_at=datetime.now(UTC),
+            remote_run_id=remote_id,
         )

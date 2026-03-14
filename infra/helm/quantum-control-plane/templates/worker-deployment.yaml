@@ -14,9 +14,16 @@ spec:
     spec:
       containers:
         - name: worker
-          image: {{ .Values.image.worker }}
+          image: {{ .Values.image.worker | quote }}
           env:
             - name: QCP_DATABASE_URL
               value: {{ .Values.env.databaseUrl | quote }}
             - name: QCP_REDIS_URL
               value: {{ .Values.env.redisUrl | quote }}
+          resources:
+            requests:
+              cpu: {{ .Values.resources.worker.requests.cpu | quote }}
+              memory: {{ .Values.resources.worker.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.resources.worker.limits.cpu | quote }}
+              memory: {{ .Values.resources.worker.limits.memory | quote }}

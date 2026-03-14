@@ -57,6 +57,8 @@ class WorkerService:
         adapter = get_provider(provider)
         try:
             result = await adapter.run(payload, job_model.timeout_seconds, str(job_model.id))
+            if result.remote_run_id:
+                await self.jobs.set_remote_run_id(job_model.id, result.remote_run_id)
             await self.results.save(result)
             await self.jobs.transition(job_model.id, JobState.SUCCEEDED)
             await self.audit.log(

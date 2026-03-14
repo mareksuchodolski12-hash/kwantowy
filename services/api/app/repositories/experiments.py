@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 from quantum_contracts import CircuitPayload, Experiment
 from sqlalchemy import select
@@ -35,7 +36,7 @@ class ExperimentRepository:
             created_at=model.created_at,
         )
 
-    async def get(self, experiment_id: object) -> Experiment | None:
+    async def get(self, experiment_id: UUID) -> Experiment | None:
         model = await self.session.scalar(select(ExperimentModel).where(ExperimentModel.id == experiment_id))
         if model is None:
             return None
