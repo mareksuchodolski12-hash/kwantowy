@@ -1,4 +1,4 @@
-import { listProviders } from '@/lib/api';
+import { listProviders, type ProviderCapabilities } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +16,7 @@ function medal(index: number): string {
 }
 
 export default async function ProvidersPage() {
-  let providers: Awaited<ReturnType<typeof listProviders>> = [];
+  let providers: ProviderCapabilities[] = [];
   try {
     providers = await listProviders();
   } catch {
@@ -73,9 +73,9 @@ export default async function ProvidersPage() {
                   <td className="px-4 py-3 text-sm text-right font-mono text-gray-700">{p.max_qubits}</td>
                   <td className="px-4 py-3 text-sm text-center">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${p.estimated_fidelity >= 1.0 ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${p.is_simulator ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}
                     >
-                      {p.estimated_fidelity >= 1.0 ? 'Simulator' : 'Hardware'}
+                      {p.is_simulator ? 'Simulator' : 'Hardware'}
                     </span>
                   </td>
                 </tr>

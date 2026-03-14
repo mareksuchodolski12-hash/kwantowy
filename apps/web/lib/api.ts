@@ -41,6 +41,7 @@ export interface ProviderCapabilities {
   provider: Provider;
   max_qubits: number;
   supports_mid_circuit_measurement: boolean;
+  is_simulator: boolean;
   estimated_cost_per_shot_usd: number;
   avg_queue_time_seconds: number;
   estimated_fidelity: number;
