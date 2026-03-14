@@ -1,9 +1,16 @@
 """Provider registry with capabilities metadata and automatic backend selection.
 
 The registry maintains a catalogue of quantum execution providers, each annotated
-with capability metadata (qubit limits, cost, simulator flag, etc.).  Given a
-circuit's requirements the ``select`` method returns a ranked list of suitable
-providers so callers can route jobs automatically.
+with capability metadata (qubit limits, cost, simulator flag, fidelity, etc.).
+Given a circuit's requirements the ``select`` method returns a ranked list of
+suitable providers so callers can route jobs automatically.
+
+Smart routing considers:
+• circuit width (qubit count)
+• estimated fidelity
+• queue latency
+• cost per shot
+• hardware preference
 """
 
 from __future__ import annotations
@@ -34,6 +41,7 @@ _DEFAULT_CAPABILITIES: list[ProviderCapabilities] = [
         is_simulator=True,
         estimated_cost_per_shot_usd=0.0,
         avg_queue_time_seconds=0.0,
+        estimated_fidelity=1.0,
     ),
     ProviderCapabilities(
         provider=ExecutionProvider.SIMULATOR_AER,
@@ -45,6 +53,7 @@ _DEFAULT_CAPABILITIES: list[ProviderCapabilities] = [
         supports_dynamic_circuits=True,
         estimated_cost_per_shot_usd=0.0,
         avg_queue_time_seconds=0.0,
+        estimated_fidelity=1.0,
     ),
     ProviderCapabilities(
         provider=ExecutionProvider.IBM_RUNTIME,
@@ -56,6 +65,7 @@ _DEFAULT_CAPABILITIES: list[ProviderCapabilities] = [
         supports_dynamic_circuits=True,
         estimated_cost_per_shot_usd=0.0016,
         avg_queue_time_seconds=120.0,
+        estimated_fidelity=0.97,
     ),
     ProviderCapabilities(
         provider=ExecutionProvider.IONQ,
@@ -66,6 +76,7 @@ _DEFAULT_CAPABILITIES: list[ProviderCapabilities] = [
         supports_mid_circuit_measurement=True,
         estimated_cost_per_shot_usd=0.01,
         avg_queue_time_seconds=60.0,
+        estimated_fidelity=0.98,
     ),
     ProviderCapabilities(
         provider=ExecutionProvider.RIGETTI,
@@ -76,6 +87,7 @@ _DEFAULT_CAPABILITIES: list[ProviderCapabilities] = [
         supports_mid_circuit_measurement=False,
         estimated_cost_per_shot_usd=0.0035,
         avg_queue_time_seconds=90.0,
+        estimated_fidelity=0.95,
     ),
 ]
 
@@ -102,12 +114,23 @@ class ProviderRegistry:
         """Return capabilities for a single provider, or ``None``."""
         return self._providers.get(provider)
 
+    def update_capabilities(self, provider: ExecutionProvider, **kwargs: object) -> None:
+        """Update specific capability fields for a provider at runtime.
+
+        This allows the benchmarking engine to push live fidelity / queue
+        metrics into the routing catalogue.
+        """
+        cap = self._providers.get(provider)
+        if cap:
+            self._providers[provider] = cap.model_copy(update=kwargs)  # type: ignore[arg-type]
+
     def select(self, request: ProviderRouteRequest) -> ProviderRouteResponse:
         """Select the best provider for the given circuit requirements.
 
-        Providers are filtered by qubit capacity and shot limit, then scored
-        by a simple weighted heuristic combining cost, queue wait, and whether
-        the caller prefers real hardware.
+        Providers are filtered by qubit capacity, shot limit, fidelity
+        threshold, and queue latency cap, then scored by a weighted
+        heuristic combining cost, queue wait, fidelity, and hardware
+        preference.
         """
         candidates = self._filter_candidates(request)
         if not candidates:
@@ -160,12 +183,23 @@ class ProviderRegistry:
                 total_cost = cap.estimated_cost_per_shot_usd * request.shots
                 if total_cost > request.max_cost_usd:
                     continue
+            # Smart routing: fidelity threshold
+            if request.min_fidelity is not None:
+                if cap.estimated_fidelity < request.min_fidelity:
+                    continue
+            # Smart routing: queue latency cap
+            if request.max_queue_seconds is not None:
+                if cap.avg_queue_time_seconds > request.max_queue_seconds:
+                    continue
             candidates.append(cap)
         return candidates
 
     @staticmethod
     def _score(cap: ProviderCapabilities, request: ProviderRouteRequest) -> float:
-        """Lower score = better match.  Weights are intentionally simple."""
+        """Lower score = better match.
+
+        Weights combine cost, queue wait, fidelity, and hardware preference.
+        """
         score: float = 0.0
         # Prefer hardware when requested, otherwise prefer simulators (cheaper).
         if request.prefer_hardware:
@@ -178,6 +212,9 @@ class ProviderRegistry:
         # Prefer shorter queue wait.
         queue_weight: float = float(cap.avg_queue_time_seconds) * 0.1
         score = score + queue_weight
+        # Prefer higher fidelity – penalise lower fidelity.
+        fidelity_penalty: float = (1.0 - cap.estimated_fidelity) * 200.0
+        score = score + fidelity_penalty
         return score
 
     @staticmethod
@@ -190,6 +227,7 @@ class ProviderRegistry:
         cost = cap.estimated_cost_per_shot_usd * request.shots
         if cost > 0:
             parts.append(f"est. cost ${cost:.4f}")
+        parts.append(f"fidelity {cap.estimated_fidelity:.2f}")
         return " ".join(parts)
 
 

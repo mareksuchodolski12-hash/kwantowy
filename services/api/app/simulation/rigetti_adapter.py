@@ -18,6 +18,5 @@ class RigettiAdapter(ExecutionProviderAdapter):
 
     async def run(self, payload: CircuitPayload, timeout_seconds: int, job_id: str) -> ExecutionResult:
         raise NotImplementedError(
-            "Rigetti provider is not yet implemented. "
-            "Set QCP_RIGETTI_API_TOKEN and install the pyQuil SDK to enable."
+            "Rigetti provider is not yet implemented. Set QCP_RIGETTI_API_TOKEN and install the pyQuil SDK to enable."
         )

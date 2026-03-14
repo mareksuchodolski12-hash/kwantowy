@@ -1,7 +1,12 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from quantum_contracts import Job, ProviderCapabilities, ProviderRouteRequest, ProviderRouteResponse
+from quantum_contracts import (
+    Job,
+    ProviderCapabilities,
+    ProviderRouteRequest,
+    ProviderRouteResponse,
+)
 from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,15 +18,46 @@ from app.domain.schemas import (
     ApiKeyCreateResponse,
     ApiKeyListItem,
     ApiKeyListResponse,
+    BenchmarkListResponse,
+    BenchmarkResponse,
+    BenchmarkRunRequest,
+    BudgetListResponse,
+    BudgetResponse,
+    CompareResultsRequest,
+    CompareResultsResponse,
+    CreateBudgetRequest,
+    CreateOrgRequest,
+    CreateProjectRequest,
+    CreateTeamRequest,
+    CreateVersionRequest,
+    CreateWorkflowRequest,
     JobListResponse,
+    OptimiseCircuitRequest,
+    OptimiseCircuitResponse,
+    OrgListResponse,
+    OrgResponse,
+    ProjectListResponse,
+    ProjectResponse,
     ResultResponse,
     SubmitExperimentRequest,
     SubmitExperimentResponse,
+    TeamListResponse,
+    TeamResponse,
+    VersionListResponse,
+    WorkflowRunListResponse,
+    WorkflowRunResponse,
 )
 from app.queue.redis_queue import RedisQueue
 from app.repositories.api_keys import ApiKeyRepository
+from app.services.benchmarking import BenchmarkingService
+from app.services.circuit_optimiser import optimise_circuit
+from app.services.cost_governance import CostGovernanceService
+from app.services.experiment_versioning import ExperimentVersionRepository
 from app.services.job_service import JobService, not_found
 from app.services.provider_registry import get_provider_registry
+from app.services.result_comparator import compare_results
+from app.services.tenant import TenantRepository
+from app.services.workflow_engine import WorkflowEngine
 
 router = APIRouter()
 
@@ -228,3 +264,339 @@ async def select_provider(body: ProviderRouteRequest) -> ProviderRouteResponse:
     """Select the best provider for the given circuit requirements."""
     registry = get_provider_registry()
     return registry.select(body)
+
+
+# ---------------------------------------------------------------------------
+# Circuit Optimisation (component 1)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/v1/circuits/optimise",
+    response_model=OptimiseCircuitResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def optimise_circuit_endpoint(body: OptimiseCircuitRequest) -> OptimiseCircuitResponse:
+    """Optimise a quantum circuit before execution."""
+    result = optimise_circuit(body.circuit, body.config)
+    return OptimiseCircuitResponse(result=result)
+
+
+# ---------------------------------------------------------------------------
+# Provider Benchmarking (component 2)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/v1/benchmarks",
+    response_model=BenchmarkResponse,
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
+async def run_benchmark(
+    body: BenchmarkRunRequest,
+    session: AsyncSession = Depends(get_session),
+) -> BenchmarkResponse:
+    """Record a provider benchmark calibration result."""
+    svc = BenchmarkingService(session)
+    result = await svc.run_calibration(
+        body.provider,
+        fidelity=body.fidelity,
+        gate_error=body.avg_gate_error,
+        readout_error=body.readout_error,
+        queue_time=body.queue_time_seconds,
+        execution_time_ms=body.execution_time_ms,
+        qubit_count=body.qubit_count,
+    )
+    await session.commit()
+    return BenchmarkResponse(benchmark=result)
+
+
+@router.get(
+    "/v1/benchmarks",
+    response_model=BenchmarkListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_benchmarks(
+    session: AsyncSession = Depends(get_session),
+) -> BenchmarkListResponse:
+    """Return the latest benchmark for every provider."""
+    svc = BenchmarkingService(session)
+    benchmarks = await svc.get_all_latest()
+    return BenchmarkListResponse(benchmarks=benchmarks)
+
+
+# ---------------------------------------------------------------------------
+# Experiment Versioning (component 4)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/v1/experiments/{experiment_id}/versions",
+    response_model=VersionListResponse,
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
+async def create_experiment_version(
+    experiment_id: UUID,
+    body: CreateVersionRequest,
+    session: AsyncSession = Depends(get_session),
+) -> VersionListResponse:
+    """Create a new version for an experiment."""
+    repo = ExperimentVersionRepository(session)
+    await repo.create(
+        experiment_id=experiment_id,
+        circuit_qasm=body.circuit_qasm,
+        optimisation_params=body.optimisation_params,
+        provider=body.provider,
+        seed=body.seed,
+        parent_version_id=body.parent_version_id,
+    )
+    await session.commit()
+    versions = await repo.list_versions(experiment_id)
+    return VersionListResponse(versions=versions)
+
+
+@router.get(
+    "/v1/experiments/{experiment_id}/versions",
+    response_model=VersionListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_experiment_versions(
+    experiment_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> VersionListResponse:
+    """List all versions of an experiment."""
+    repo = ExperimentVersionRepository(session)
+    versions = await repo.list_versions(experiment_id)
+    return VersionListResponse(versions=versions)
+
+
+# ---------------------------------------------------------------------------
+# Workflow Orchestration (component 5)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/v1/workflows",
+    response_model=WorkflowRunResponse,
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
+async def create_and_run_workflow(
+    body: CreateWorkflowRequest,
+    session: AsyncSession = Depends(get_session),
+) -> WorkflowRunResponse:
+    """Create a workflow definition and immediately start a run."""
+    engine = WorkflowEngine(session)
+    try:
+        workflow_id = await engine.create_workflow(body.workflow)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    run = await engine.start_run(workflow_id)
+    await session.commit()
+    return WorkflowRunResponse(run=run)
+
+
+@router.get(
+    "/v1/workflows/runs",
+    response_model=WorkflowRunListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_workflow_runs(
+    session: AsyncSession = Depends(get_session),
+) -> WorkflowRunListResponse:
+    """List recent workflow runs."""
+    engine = WorkflowEngine(session)
+    runs = await engine.list_runs()
+    return WorkflowRunListResponse(runs=runs)
+
+
+@router.get(
+    "/v1/workflows/runs/{run_id}",
+    response_model=WorkflowRunResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def get_workflow_run(
+    run_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> WorkflowRunResponse:
+    """Get a specific workflow run."""
+    engine = WorkflowEngine(session)
+    run = await engine.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Workflow run not found")
+    return WorkflowRunResponse(run=run)
+
+
+# ---------------------------------------------------------------------------
+# Result Comparison (component 6)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/v1/results/compare",
+    response_model=CompareResultsResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def compare_results_endpoint(
+    body: CompareResultsRequest,
+    session: AsyncSession = Depends(get_session),
+    redis: Redis = Depends(get_redis),
+) -> CompareResultsResponse:
+    """Compare execution results across providers."""
+    from app.repositories.results import ResultRepository
+
+    result_repo = ResultRepository(session)
+    results = []
+    for jid in body.job_ids:
+        r = await result_repo.get_by_job_id(jid)
+        if r is not None:
+            results.append(r)
+    if not results:
+        raise HTTPException(status_code=404, detail="No results found for the given job IDs")
+    comparison = compare_results(body.experiment_name, results, body.reference_distribution)
+    return CompareResultsResponse(comparison=comparison)
+
+
+# ---------------------------------------------------------------------------
+# Cost Governance (component 7)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/v1/budgets",
+    response_model=BudgetResponse,
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
+async def create_budget(
+    body: CreateBudgetRequest,
+    session: AsyncSession = Depends(get_session),
+) -> BudgetResponse:
+    """Create a budget for cost governance."""
+    svc = CostGovernanceService(session)
+    budget = await svc.create_budget(
+        scope=body.scope,
+        scope_id=body.scope_id,
+        monthly_limit_usd=body.monthly_limit_usd,
+        alert_threshold_pct=body.alert_threshold_pct,
+    )
+    await session.commit()
+    return BudgetResponse(budget=budget)
+
+
+@router.get(
+    "/v1/budgets",
+    response_model=BudgetListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_budgets(
+    session: AsyncSession = Depends(get_session),
+) -> BudgetListResponse:
+    """List all budgets."""
+    svc = CostGovernanceService(session)
+    budgets = await svc.list_budgets()
+    return BudgetListResponse(budgets=budgets)
+
+
+# ---------------------------------------------------------------------------
+# Multi-tenant Platform (component 9)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/v1/orgs",
+    response_model=OrgResponse,
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
+async def create_org(
+    body: CreateOrgRequest,
+    session: AsyncSession = Depends(get_session),
+) -> OrgResponse:
+    """Create a new organisation."""
+    repo = TenantRepository(session)
+    org = await repo.create_org(body.name)
+    await session.commit()
+    return OrgResponse(organisation=org)
+
+
+@router.get(
+    "/v1/orgs",
+    response_model=OrgListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_orgs(
+    session: AsyncSession = Depends(get_session),
+) -> OrgListResponse:
+    """List all organisations."""
+    repo = TenantRepository(session)
+    orgs = await repo.list_orgs()
+    return OrgListResponse(organisations=orgs)
+
+
+@router.post(
+    "/v1/orgs/{org_id}/teams",
+    response_model=TeamResponse,
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
+async def create_team(
+    org_id: UUID,
+    body: CreateTeamRequest,
+    session: AsyncSession = Depends(get_session),
+) -> TeamResponse:
+    """Create a team within an organisation."""
+    repo = TenantRepository(session)
+    team = await repo.create_team(org_id, body.name)
+    await session.commit()
+    return TeamResponse(team=team)
+
+
+@router.get(
+    "/v1/orgs/{org_id}/teams",
+    response_model=TeamListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_teams(
+    org_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> TeamListResponse:
+    """List teams in an organisation."""
+    repo = TenantRepository(session)
+    teams = await repo.list_teams(org_id)
+    return TeamListResponse(teams=teams)
+
+
+@router.post(
+    "/v1/teams/{team_id}/projects",
+    response_model=ProjectResponse,
+    status_code=201,
+    dependencies=[Depends(require_api_key)],
+)
+async def create_project(
+    team_id: UUID,
+    body: CreateProjectRequest,
+    session: AsyncSession = Depends(get_session),
+) -> ProjectResponse:
+    """Create a project within a team."""
+    repo = TenantRepository(session)
+    project = await repo.create_project(team_id, body.name, body.description)
+    await session.commit()
+    return ProjectResponse(project=project)
+
+
+@router.get(
+    "/v1/teams/{team_id}/projects",
+    response_model=ProjectListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_projects(
+    team_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> ProjectListResponse:
+    """List projects in a team."""
+    repo = TenantRepository(session)
+    projects = await repo.list_projects(team_id)
+    return ProjectListResponse(projects=projects)

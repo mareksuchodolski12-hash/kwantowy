@@ -27,6 +27,36 @@ dlq_length = Gauge("qcp_dlq_length", "Number of messages in the dead-letter queu
 queue_depth = Gauge("qcp_queue_depth", "Number of messages waiting in the job queue")
 processing_count = Gauge("qcp_processing_count", "Number of messages currently being processed")
 
+# ---------------------------------------------------------------------------
+# Advanced observability – platform-level metrics (component 8)
+# ---------------------------------------------------------------------------
+
+provider_reliability = Gauge(
+    "qcp_provider_reliability",
+    "Provider reliability ratio (success / total)",
+    ["provider"],
+)
+fidelity_drift = Gauge(
+    "qcp_fidelity_drift",
+    "Fidelity drift from baseline per provider",
+    ["provider"],
+)
+circuit_optimisation_savings = Histogram(
+    "qcp_circuit_optimisation_depth_reduction",
+    "Circuit depth reduction achieved by optimiser",
+    ["strategy"],
+)
+workflow_runs_total = Counter(
+    "qcp_workflow_runs_total",
+    "Total workflow runs",
+    ["state"],
+)
+cost_per_provider = Counter(
+    "qcp_cost_usd_total",
+    "Cumulative cost in USD per provider",
+    ["provider"],
+)
+
 _metrics_logger = logging.getLogger(__name__)
 
 
