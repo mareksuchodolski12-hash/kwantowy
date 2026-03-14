@@ -101,6 +101,30 @@ class QCPClient:
         resp.raise_for_status()
         return resp.json()  # type: ignore[no-any-return]
 
+    def run_experiment(
+        self,
+        name: str,
+        qasm: str,
+        shots: int = 1024,
+        provider: str = "local_simulator",
+        description: str | None = None,
+    ) -> dict[str, Any]:
+        """High-level helper that mirrors the SDK example in the docs.
+
+        Returns the full response dict (with ``experiment`` and ``job`` keys).
+        """
+        return self.run_circuit(name=name, qasm=qasm, shots=shots, provider=provider, description=description)
+
+    def list_experiments(self) -> list[dict[str, Any]]:
+        """List all experiments."""
+        resp = httpx.get(
+            f"{self._base}/v1/experiments",
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()["experiments"]  # type: ignore[no-any-return]
+
     def list_jobs(self) -> list[dict[str, Any]]:
         """List all jobs."""
         resp = httpx.get(

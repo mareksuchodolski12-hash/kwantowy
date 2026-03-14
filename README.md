@@ -1,176 +1,149 @@
-# Quantum Control Plane (kwantowy)
+# Quantum Control Plane (QCP)
 
-A developer platform for running quantum circuits as a service — submit QASM circuits, schedule jobs, execute on local simulators or IBM Quantum Runtime, and retrieve results via a clean REST API.
+An open developer platform for quantum computing — submit QASM circuits, orchestrate multi-step experiments, benchmark providers, and visualise results. Think [MLflow](https://mlflow.org/) or [Airflow](https://airflow.apache.org/), but for quantum.
 
-## Architecture
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-| Component | Technology |
-|-----------|-----------|
-| API server | FastAPI (Python 3.11) |
-| Job queue | Redis (BLPOP + visibility timeout + DLQ) |
-| Worker | Async Python, graceful shutdown |
-| Database | PostgreSQL (SQLAlchemy + Alembic) |
-| Providers | Qiskit local simulator, IBM Quantum Runtime, IonQ (stub), Rigetti (stub) |
-| Frontend | Next.js 14 operational console |
-| Observability | Prometheus metrics, OpenTelemetry traces, Grafana dashboards |
+## Platform Overview
 
-## ⚡ Quickstart (under 5 minutes)
+```
+┌──────────────────────────────────────────────────────┐
+│  Developer Platform: SDK · CLI · REST API (/v1/)     │
+├──────────────────────────────────────────────────────┤
+│  Control Plane: Experiments · Workflows · Cost Gov   │
+├──────────────────────────────────────────────────────┤
+│  Execution Plane: Workers · Providers · Simulators   │
+├──────────────────────────────────────────────────────┤
+│  Dashboard: Experiments · Leaderboard · Demo · Runs  │
+└──────────────────────────────────────────────────────┘
+```
+
+| Layer | Components |
+|-------|-----------|
+| **Control Plane** | FastAPI API, experiments, workflows, cost governance, circuit optimisation |
+| **Execution Plane** | Async workers, provider adapters, local/Aer simulators, IBM Runtime |
+| **Developer Platform** | Python SDK, `qcp` CLI, OpenAPI REST API |
+| **Dashboard** | Next.js 14 web console, provider leaderboard, interactive demo |
+| **Infrastructure** | PostgreSQL, Redis queue, Prometheus, Grafana, OpenTelemetry |
+
+## ⚡ Quickstart (5 minutes)
 
 **Prerequisites:** Python ≥ 3.11, Node 20, Docker
 
 ```bash
-# 1. Install dependencies
-make bootstrap
-
-# 2. Start infrastructure (Postgres + Redis)
-make up
-
-# 3. Run database migrations
-make migrate
-
-# 4. Start the API server (terminal 1)
-make api
-
-# 5. Start the worker (terminal 2)
-make worker
-
-# 6. (Optional) Start the web console (terminal 3)
-make web
+make bootstrap    # Install all dependencies (SDK, CLI, API, web)
+make up           # Start Postgres + Redis
+make migrate      # Apply database migrations
+make api          # Start API server (port 8000)
+make worker       # Start job worker (separate terminal)
+make web          # Start web console (port 3000)
 ```
 
-Open:
-- Web console: http://localhost:3000
-- API docs (Swagger UI): http://localhost:8000/docs
-- Metrics: http://localhost:8000/metrics
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3001
+| Service | URL |
+|---------|-----|
+| Web Console | http://localhost:3000 |
+| Interactive Demo | http://localhost:3000/demo |
+| Provider Leaderboard | http://localhost:3000/providers |
+| API Docs (Swagger) | http://localhost:8000/docs |
+| API Docs (ReDoc) | http://localhost:8000/redoc |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3001 |
 
 ## Authentication
 
-All API endpoints (except `/healthz`, `/readyz`, and `POST /v1/api-keys`) require an `X-API-Key` header.
-
-**Generate your first API key:**
-
 ```bash
-curl -s -X POST http://localhost:8000/v1/api-keys \
+# Generate an API key
+curl -X POST http://localhost:8000/v1/api-keys \
   -H "Content-Type: application/json" \
-  -d '{"name": "my-dev-key"}' | python3 -m json.tool
-```
+  -d '{"name": "dev"}' | python3 -m json.tool
 
-Use the returned `key` value in all subsequent requests:
-
-```bash
 export QCP_API_KEY=qcp_...
-curl -s http://localhost:8000/v1/jobs \
-  -H "X-API-Key: $QCP_API_KEY" | python3 -m json.tool
-```
-
-## API Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/v1/api-keys` | Create an API key (unauthenticated) |
-| `GET` | `/v1/api-keys` | List API keys |
-| `DELETE` | `/v1/api-keys/{id}` | Revoke an API key |
-| `POST` | `/v1/experiments` | Submit a circuit (201 Created) |
-| `POST` | `/v1/jobs` | Submit a circuit (alias) |
-| `GET` | `/v1/jobs` | List all jobs |
-| `GET` | `/v1/jobs/{job_id}` | Get job status |
-| `GET` | `/v1/jobs/{job_id}/result` | Get job result |
-| `GET` | `/v1/results/{job_id}` | Get job result (alias) |
-| `GET` | `/v1/providers` | List provider capabilities |
-| `POST` | `/v1/providers/select` | Select best provider for circuit |
-| `GET` | `/healthz` | Health check |
-| `GET` | `/readyz` | Readiness check |
-
-## Submit a circuit (curl)
-
-```bash
-curl -s -X POST http://localhost:8000/v1/experiments \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $QCP_API_KEY" \
-  -d '{
-    "name": "bell-state",
-    "circuit": {
-      "qasm": "OPENQASM 2.0; include \"qelib1.inc\"; qreg q[2]; creg c[2]; h q[0]; cx q[0],q[1]; measure q -> c;",
-      "shots": 1024
-    }
-  }' | python3 -m json.tool
 ```
 
 ## Python SDK
 
 ```bash
-pip install packages/sdk
+pip install -e packages/sdk
 ```
 
 ```python
 from quantum_sdk import QCPClient
 
-client = QCPClient(api_key="qcp_...", base_url="http://localhost:8000")
-
-# Submit a circuit
-resp = client.run_circuit(
-    name="bell-state",
-    qasm='OPENQASM 2.0; include "qelib1.inc"; qreg q[2]; creg c[2]; h q[0]; cx q[0],q[1]; measure q -> c;',
+client = QCPClient(api_key="qcp_...")
+job = client.run_experiment(
+    name="bell",
+    qasm=open("bell.qasm").read(),
     shots=1024,
 )
-job_id = resp["job"]["id"]
-
-# Poll until done and get result
-result = client.wait_for_result(job_id)
-print(result["result"]["counts"])  # e.g. {"00": 512, "11": 512}
+result = client.wait_for_result(job["job"]["id"])
+print(result["result"]["counts"])
 ```
 
-See `examples/quickstart.py` for a complete runnable example.
-
-## Example circuits
-
-| Circuit | QASM |
-|---------|------|
-| Single qubit flip | `OPENQASM 2.0; include "qelib1.inc"; qreg q[1]; creg c[1]; x q[0]; measure q[0] -> c[0];` |
-| Hadamard superposition | `OPENQASM 2.0; include "qelib1.inc"; qreg q[1]; creg c[1]; h q[0]; measure q[0] -> c[0];` |
-| Bell state | `OPENQASM 2.0; include "qelib1.inc"; qreg q[2]; creg c[2]; h q[0]; cx q[0],q[1]; measure q -> c;` |
-
-## IBM Quantum Runtime
-
-Set environment variables to run on real quantum hardware:
+## CLI
 
 ```bash
-export QCP_IBM_RUNTIME_ENABLED=true
-export QCP_IBM_RUNTIME_TOKEN=<your-ibm-token>
-export QCP_IBM_RUNTIME_CHANNEL=ibm_quantum
-export QCP_IBM_RUNTIME_INSTANCE=<hub/group/project>
-export QCP_IBM_RUNTIME_BACKEND=ibm_brisbane
+pip install -e packages/cli
+
+qcp login
+qcp experiment run bell.qasm --provider local_simulator
+qcp experiment list
+qcp run status <job_id>
+qcp result show <job_id>
 ```
 
-Then submit with `"provider": "ibm_runtime"` in your request.
+## REST API
 
-## Environment configuration
+All endpoints are under `/v1/` with OpenAPI documentation at `/docs`.
 
-Copy `.env.example` to `.env` and fill in your values:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/v1/api-keys` | Create API key |
+| `POST` | `/v1/experiments` | Submit experiment |
+| `GET` | `/v1/experiments` | List experiments |
+| `GET` | `/v1/jobs/{id}` | Get job status |
+| `GET` | `/v1/results/{id}` | Get results |
+| `GET` | `/v1/providers` | List providers |
+| `POST` | `/v1/providers/select` | Smart provider routing |
+| `POST` | `/v1/benchmarks` | Run benchmark |
+| `GET` | `/v1/benchmarks` | List benchmarks |
+| `POST` | `/v1/workflows` | Create workflow |
+| `POST` | `/v1/budgets` | Create budget |
+| `POST` | `/v1/circuits/optimise` | Optimise circuit |
+| `POST` | `/v1/results/compare` | Compare results |
 
-```bash
-cp .env.example .env
+## Project Structure
+
+```
+├── services/api/          # FastAPI control plane
+├── workers/
+│   ├── quantum-runner/    # Job execution worker
+│   └── benchmark-runner/  # Auto-benchmark worker
+├── apps/web/              # Next.js dashboard
+├── packages/
+│   ├── sdk/               # Python SDK
+│   ├── cli/               # CLI tool (qcp)
+│   └── contracts/         # Shared Pydantic models
+├── plugins/providers/     # External provider plugins
+├── docs/                  # Documentation
+├── infra/                 # Helm, Terraform, observability
+└── examples/              # Quickstart scripts
 ```
 
-## Docker deployment
+## Provider Plugins
 
-```bash
-# Start everything with Docker Compose
-docker compose up -d
+External providers can be added under `plugins/providers/`:
 
-# Run migrations
-docker compose exec api alembic upgrade head
+```python
+from plugins.providers.base import BaseProvider, ProviderInfo
 
-# Generate an API key
-docker compose exec api python -c "
-import asyncio, sys
-sys.path.insert(0, '.')
-from app.repositories.api_keys import generate_api_key
-print(generate_api_key())
-"
+class MyProvider(BaseProvider):
+    name = "my_provider"
+    def info(self) -> ProviderInfo: ...
+    async def execute(self, qasm: str, shots: int) -> dict[str, int]: ...
 ```
+
+Included examples: `aws_braket` (stub), `custom_simulator`.
 
 ## Development
 
@@ -179,10 +152,18 @@ make lint       # ruff + eslint
 make typecheck  # mypy + tsc
 make test       # pytest
 make format     # ruff format
+make benchmark  # Run auto-benchmark worker
 ```
 
 ## Documentation
 
-- `docs/architecture/` — platform architecture and ADRs
-- `docs/runbooks/` — operational runbooks
-- `docs/demo-walkthrough.md` — end-to-end demo guide
+- [Getting Started](docs/getting-started.md)
+- [Architecture](ARCHITECTURE.md)
+- [CLI Reference](docs/cli.md)
+- [SDK Guide](docs/sdk.md)
+- [Experiments](docs/experiments.md)
+- [Workflows](docs/workflows.md)
+- [Providers & Plugins](docs/providers.md)
+- [Benchmarking](docs/benchmarking.md)
+- [Contributing](CONTRIBUTING.md)
+- [Roadmap](ROADMAP.md)
