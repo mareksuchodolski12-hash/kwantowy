@@ -71,3 +71,10 @@ class RedisQueue:
     async def dlq_length(self) -> int:
         return cast(int, await cast(Any, self.redis.llen(self._dlq_key)))
 
+    async def queue_length(self) -> int:
+        """Return the number of messages waiting in the main queue."""
+        return cast(int, await cast(Any, self.redis.llen(settings.queue_name)))
+
+    async def processing_count(self) -> int:
+        """Return the number of messages currently in the processing set."""
+        return cast(int, await cast(Any, self.redis.zcard(self._processing_key)))
