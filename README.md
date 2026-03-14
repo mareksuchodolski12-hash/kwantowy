@@ -10,7 +10,7 @@ A developer platform for running quantum circuits as a service — submit QASM c
 | Job queue | Redis (BLPOP + visibility timeout + DLQ) |
 | Worker | Async Python, graceful shutdown |
 | Database | PostgreSQL (SQLAlchemy + Alembic) |
-| Providers | Qiskit local simulator, IBM Quantum Runtime |
+| Providers | Qiskit local simulator, IBM Quantum Runtime, IonQ (stub), Rigetti (stub) |
 | Frontend | Next.js 14 operational console |
 | Observability | Prometheus metrics, OpenTelemetry traces, Grafana dashboards |
 
@@ -78,6 +78,8 @@ curl -s http://localhost:8000/v1/jobs \
 | `GET` | `/v1/jobs/{job_id}` | Get job status |
 | `GET` | `/v1/jobs/{job_id}/result` | Get job result |
 | `GET` | `/v1/results/{job_id}` | Get job result (alias) |
+| `GET` | `/v1/providers` | List provider capabilities |
+| `POST` | `/v1/providers/select` | Select best provider for circuit |
 | `GET` | `/healthz` | Health check |
 | `GET` | `/readyz` | Readiness check |
 
@@ -184,4 +186,3 @@ make format     # ruff format
 - `docs/architecture/` — platform architecture and ADRs
 - `docs/runbooks/` — operational runbooks
 - `docs/demo-walkthrough.md` — end-to-end demo guide
-
