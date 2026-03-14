@@ -31,13 +31,18 @@ htmlcov/
 *.tfstate.*
 .terraform/
 
+# Build artifacts
+dist/
+build/
 *.tsbuildinfo
-services/api/test_api.db
-services/api/test_worker.db
-services/api/test_idempotency.db
-services/api/test_platform.db
-services/api/test_providers.db
-test_api.db
-local_dev.db
-test_platform.db
-test_providers.db
+
+# Database files
+*.db
+*.sqlite
+
+# Secrets / certificates
+*.pem
+*.key
+
+# Logs
+*.log
