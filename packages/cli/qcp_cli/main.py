@@ -11,7 +11,6 @@ Usage:
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -72,7 +71,7 @@ def experiment_run(file: str, provider: str, shots: int, name: str | None, wait:
         resp = client.run_circuit(name=exp_name, qasm=qasm, shots=shots, provider=provider)
 
     job_id = resp["job"]["id"]
-    console.print(f"[green]✓[/green] Experiment submitted")
+    console.print("[green]✓[/green] Experiment submitted")
     console.print(f"  Job ID:  {job_id}")
     console.print(f"  Status:  {resp['job']['status']}")
 
