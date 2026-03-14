@@ -43,6 +43,10 @@ class JobListResponse(BaseModel):
     jobs: list[Job]
 
 
+class ExperimentListResponse(BaseModel):
+    experiments: list[Experiment]
+
+
 class ResultResponse(BaseModel):
     result: ExecutionResult
 

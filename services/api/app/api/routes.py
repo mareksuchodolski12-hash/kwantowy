@@ -31,6 +31,7 @@ from app.domain.schemas import (
     CreateTeamRequest,
     CreateVersionRequest,
     CreateWorkflowRequest,
+    ExperimentListResponse,
     JobListResponse,
     OptimiseCircuitRequest,
     OptimiseCircuitResponse,
@@ -171,6 +172,20 @@ async def create_experiment(
 ) -> SubmitExperimentResponse:
     """Alias for POST /v1/jobs with 201 Created."""
     return await _submit(body, idempotency_key, session, redis)
+
+
+@router.get(
+    "/v1/experiments",
+    response_model=ExperimentListResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def list_experiments(
+    session: AsyncSession = Depends(get_session),
+    redis: Redis = Depends(get_redis),
+) -> ExperimentListResponse:
+    """List all experiments."""
+    service = JobService(session, RedisQueue(redis))
+    return ExperimentListResponse(experiments=await service.list_experiments())
 
 
 @router.get("/v1/jobs/{job_id}", dependencies=[Depends(require_api_key)])
