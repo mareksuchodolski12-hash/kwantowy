@@ -11,9 +11,13 @@
     "format": "echo 'Formatting handled by editor/prettier in this phase'"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.27",
     "next": "14.2.5",
+    "postcss": "^8.5.8",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "recharts": "^3.8.0",
+    "tailwindcss": "^3.4.19"
   },
   "devDependencies": {
     "@types/node": "22.5.5",

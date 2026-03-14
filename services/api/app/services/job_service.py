@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from quantum_contracts import ErrorResponse, ExecutionResult, Job, JobState
+from quantum_contracts import ErrorResponse, ExecutionResult, Experiment, Job, JobState
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.correlation import get_correlation_id
@@ -79,6 +79,12 @@ class JobService:
 
     async def list_jobs(self) -> list[Job]:
         return await self.jobs.list()
+
+    async def list_experiments(self) -> list[Experiment]:
+        return await self.experiments.list()
+
+    async def get_experiment(self, experiment_id: UUID) -> Experiment | None:
+        return await self.experiments.get(experiment_id)
 
     async def get_result(self, job_id: UUID) -> ExecutionResult | None:
         return await self.results.get_by_job_id(job_id)

@@ -28,18 +28,21 @@ class ExperimentRepository:
         )
         self.session.add(model)
         await self.session.flush()
-        return Experiment(
-            id=model.id,
-            name=model.name,
-            description=model.description,
-            circuit=CircuitPayload(qasm=model.circuit_qasm, shots=model.shots),
-            created_at=model.created_at,
-        )
+        return self._to_contract(model)
 
     async def get(self, experiment_id: UUID) -> Experiment | None:
         model = await self.session.scalar(select(ExperimentModel).where(ExperimentModel.id == experiment_id))
         if model is None:
             return None
+        return self._to_contract(model)
+
+    async def list(self, limit: int = 100) -> list[Experiment]:
+        rows = await self.session.scalars(
+            select(ExperimentModel).order_by(ExperimentModel.created_at.desc()).limit(limit)
+        )
+        return [self._to_contract(m) for m in rows]
+
+    def _to_contract(self, model: ExperimentModel) -> Experiment:
         return Experiment(
             id=model.id,
             name=model.name,

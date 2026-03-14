@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { getJob, getResult, type Job, type ExecutionResult } from '@/lib/api';
+import { listJobs, getResult, type Job, type ExecutionResult } from '@/lib/api';
 import StatusBadge from '@/components/StatusBadge';
 import ProviderBadge from '@/components/ProviderBadge';
 import ResultChart from '@/components/ResultChart';
 
-export default function RunDetailsPage() {
+export default function ExperimentDetailPage() {
   const params = useParams<{ id: string }>();
-  const jobId = params.id;
+  const experimentId = params.id;
 
   const [job, setJob] = useState<Job | null>(null);
   const [result, setResult] = useState<ExecutionResult | null>(null);
@@ -17,16 +17,19 @@ export default function RunDetailsPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const j = await getJob(jobId);
-      setJob(j);
-      if (j.status === 'succeeded') {
-        const res = await getResult(jobId);
-        if (res) setResult(res.result);
+      const { jobs } = await listJobs();
+      const matched = jobs.find((j) => j.experiment_id === experimentId);
+      if (matched) {
+        setJob(matched);
+        if (matched.status === 'succeeded') {
+          const res = await getResult(matched.id);
+          if (res) setResult(res.result);
+        }
       }
     } finally {
       setLoading(false);
     }
-  }, [jobId]);
+  }, [experimentId]);
 
   useEffect(() => {
     fetchData();
@@ -39,39 +42,40 @@ export default function RunDetailsPage() {
   }, [job, fetchData]);
 
   if (loading) {
-    return <p className="text-gray-500 py-8 text-center">Loading run details…</p>;
-  }
-
-  if (!job) {
-    return <p className="text-red-500 py-8 text-center">Job not found.</p>;
+    return <p className="text-gray-500 py-8 text-center">Loading experiment…</p>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Run Details</h2>
-        <p className="text-sm text-gray-500 mt-1">Job ID: {job.id}</p>
+        <h2 className="text-2xl font-bold text-gray-900">Experiment Detail</h2>
+        <p className="text-sm text-gray-500 mt-1">ID: {experimentId}</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-xs text-gray-500 uppercase">Status</p>
-            <StatusBadge status={job.status} />
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-800">Job Status</h3>
+        {job ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 uppercase">Status</p>
+              <StatusBadge status={job.status} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase">Provider</p>
+              <ProviderBadge provider={job.provider} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase">Attempts</p>
+              <p className="text-sm font-medium">{job.attempts}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase">Updated</p>
+              <p className="text-sm font-medium">{new Date(job.updated_at).toLocaleString()}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase">Provider</p>
-            <ProviderBadge provider={job.provider} />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase">Attempts</p>
-            <p className="text-sm font-medium">{job.attempts}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase">Updated</p>
-            <p className="text-sm font-medium">{new Date(job.updated_at).toLocaleString()}</p>
-          </div>
-        </div>
+        ) : (
+          <p className="text-gray-500 text-sm">No job found for this experiment.</p>
+        )}
       </div>
 
       {result && (
@@ -99,7 +103,7 @@ export default function RunDetailsPage() {
         </div>
       )}
 
-      {!result && job.status !== 'succeeded' && job.status !== 'failed' && (
+      {job && !result && job.status !== 'succeeded' && job.status !== 'failed' && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <p className="text-yellow-800 text-sm">
             ⏳ Job is {job.status}. Results will appear automatically when execution completes.
