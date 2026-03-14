@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from quantum_contracts import Job
+from quantum_contracts import Job, ProviderCapabilities, ProviderRouteRequest, ProviderRouteResponse
 from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,7 @@ from app.domain.schemas import (
 from app.queue.redis_queue import RedisQueue
 from app.repositories.api_keys import ApiKeyRepository
 from app.services.job_service import JobService, not_found
+from app.services.provider_registry import get_provider_registry
 
 router = APIRouter()
 
@@ -201,3 +202,29 @@ async def get_result(
     """Alias for GET /v1/jobs/{job_id}/result."""
     return await _get_result(job_id, session, redis)
 
+
+# ---------------------------------------------------------------------------
+# Provider Registry
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/v1/providers",
+    response_model=list[ProviderCapabilities],
+    dependencies=[Depends(require_api_key)],
+)
+async def list_providers() -> list[ProviderCapabilities]:
+    """List all registered quantum execution providers with capabilities."""
+    registry = get_provider_registry()
+    return registry.list_capabilities()
+
+
+@router.post(
+    "/v1/providers/select",
+    response_model=ProviderRouteResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def select_provider(body: ProviderRouteRequest) -> ProviderRouteResponse:
+    """Select the best provider for the given circuit requirements."""
+    registry = get_provider_registry()
+    return registry.select(body)

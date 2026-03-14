@@ -7,6 +7,10 @@ from .models import (
     Experiment,
     Job,
     JobState,
+    ProviderCapabilities,
+    ProviderRouteRequest,
+    ProviderRouteResponse,
+    ResultComparison,
     RetryPolicy,
 )
 
@@ -19,5 +23,9 @@ __all__ = [
     "Experiment",
     "Job",
     "JobState",
+    "ProviderCapabilities",
+    "ProviderRouteRequest",
+    "ProviderRouteResponse",
+    "ResultComparison",
     "RetryPolicy",
 ]
