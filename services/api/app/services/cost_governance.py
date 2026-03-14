@@ -160,7 +160,7 @@ class CostGovernanceService:
         if budget is None:
             return True
         remaining: float = budget.monthly_limit_usd - budget.current_spend_usd
-        return bool(estimated_cost <= remaining)
+        return estimated_cost <= remaining
 
     async def record_cost(
         self,
