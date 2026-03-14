@@ -32,3 +32,4 @@ htmlcov/
 .terraform/
 
 *.tsbuildinfo
+services/api/test_api.db

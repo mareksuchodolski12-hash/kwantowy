@@ -35,7 +35,7 @@ class JobService:
         if idempotency_key:
             existing_job = await self.jobs.get_by_idempotency_key(idempotency_key)
             if existing_job:
-                existing_experiment = await self.experiments.get(str(existing_job.experiment_id))
+                existing_experiment = await self.experiments.get(existing_job.experiment_id)
                 if existing_experiment is None:
                     raise ValueError("inconsistent idempotent job state")
                 return SubmitExperimentResponse(experiment=existing_experiment, job=existing_job)

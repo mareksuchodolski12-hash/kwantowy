@@ -6,3 +6,26 @@ image:
 env:
   databaseUrl: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
   redisUrl: redis://redis:6379/0
+
+resources:
+  api:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  worker:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  web:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"

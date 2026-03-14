@@ -14,9 +14,16 @@ spec:
     spec:
       containers:
         - name: web
-          image: {{ .Values.image.web }}
+          image: {{ .Values.image.web | quote }}
           ports:
             - containerPort: 3000
+          resources:
+            requests:
+              cpu: {{ .Values.resources.web.requests.cpu | quote }}
+              memory: {{ .Values.resources.web.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.resources.web.limits.cpu | quote }}
+              memory: {{ .Values.resources.web.limits.memory | quote }}
 ---
 apiVersion: v1
 kind: Service

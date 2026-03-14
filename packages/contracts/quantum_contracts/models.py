@@ -67,6 +67,7 @@ class ExecutionResult(BaseModel):
     shots: int
     duration_ms: int
     completed_at: datetime
+    remote_run_id: str | None = None
 
 
 class ErrorResponse(BaseModel):
