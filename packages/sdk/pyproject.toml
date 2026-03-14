@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantum-control-plane-sdk"
+version = "0.1.0"
+description = "Python SDK for the Quantum Control Plane API"
+requires-python = ">=3.11"
+dependencies = [
+  "httpx>=0.27.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["quantum_sdk*"]

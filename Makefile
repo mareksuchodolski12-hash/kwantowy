@@ -3,6 +3,7 @@
 bootstrap:
 	python -m pip install --upgrade pip
 	python -m pip install -e packages/contracts
+	python -m pip install -e packages/sdk
 	python -m pip install -e services/api[dev]
 	cd apps/web && npm install
 	python -m pip install pre-commit

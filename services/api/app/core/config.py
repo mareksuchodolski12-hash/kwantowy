@@ -20,5 +20,8 @@ class Settings(BaseSettings):
 
     otel_exporter_otlp_endpoint: str | None = None
 
+    # Worker settings
+    stuck_job_timeout_seconds: int = 120
+
 
 settings = Settings()

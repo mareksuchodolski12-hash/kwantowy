@@ -8,10 +8,20 @@ services:
     ports: ["5432:5432"]
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quantum"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7
     ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   api:
     build:
@@ -20,8 +30,19 @@ services:
     environment:
       QCP_DATABASE_URL: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
       QCP_REDIS_URL: redis://redis:6379/0
+      QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
+      QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
+      QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
+      QCP_IBM_RUNTIME_CHANNEL: ${QCP_IBM_RUNTIME_CHANNEL:-ibm_quantum}
+      QCP_IBM_RUNTIME_INSTANCE: ${QCP_IBM_RUNTIME_INSTANCE:-}
+      QCP_IBM_RUNTIME_BACKEND: ${QCP_IBM_RUNTIME_BACKEND:-ibmq_qasm_simulator}
+      QCP_OTEL_EXPORTER_OTLP_ENDPOINT: ${QCP_OTEL_EXPORTER_OTLP_ENDPOINT:-}
     ports: ["8000:8000"]
-    depends_on: [postgres, redis]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   worker:
     build:
@@ -30,14 +51,26 @@ services:
     environment:
       QCP_DATABASE_URL: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
       QCP_REDIS_URL: redis://redis:6379/0
-    depends_on: [postgres, redis]
+      QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
+      QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
+      QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
+      QCP_IBM_RUNTIME_CHANNEL: ${QCP_IBM_RUNTIME_CHANNEL:-ibm_quantum}
+      QCP_IBM_RUNTIME_INSTANCE: ${QCP_IBM_RUNTIME_INSTANCE:-}
+      QCP_IBM_RUNTIME_BACKEND: ${QCP_IBM_RUNTIME_BACKEND:-ibmq_qasm_simulator}
+      QCP_STUCK_JOB_TIMEOUT_SECONDS: ${QCP_STUCK_JOB_TIMEOUT_SECONDS:-120}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
     environment:
-      NEXT_PUBLIC_API_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-}
     ports: ["3000:3000"]
     depends_on: [api]
 
@@ -64,3 +97,4 @@ services:
 
 volumes:
   postgres_data:
+

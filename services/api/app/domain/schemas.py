@@ -1,3 +1,6 @@
+from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field
 from quantum_contracts import (
     CircuitPayload,
@@ -30,3 +33,34 @@ class JobListResponse(BaseModel):
 
 class ResultResponse(BaseModel):
     result: ExecutionResult
+
+
+class ApiKeyCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=255)
+
+
+class ApiKeyCreateResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID
+    name: str
+    key: str
+    created_at: datetime
+
+
+class ApiKeyListItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID
+    name: str
+    is_active: bool
+    created_at: datetime
+    last_used_at: datetime | None
+
+
+class ApiKeyListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    keys: list[ApiKeyListItem]
