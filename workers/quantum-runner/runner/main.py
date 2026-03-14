@@ -1,11 +1,14 @@
 import asyncio
 import logging
 import signal
+from datetime import UTC, datetime, timedelta
 
 from redis.asyncio import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.config import settings
+from app.db.models import JobModel
 from app.queue.redis_queue import RedisQueue
 from app.services.worker_service import WorkerService
 
@@ -22,15 +25,8 @@ def _handle_signal(sig: int, frame: object) -> None:
 
 async def recover_stuck_jobs(session_factory: async_sessionmaker) -> None:  # type: ignore[type-arg]
     """Transition RUNNING jobs left over from a previous crash back to QUEUED."""
-    from datetime import UTC, datetime, timedelta
-
-    from sqlalchemy import select
-
-    from app.db.models import JobModel
-    from app.queue.redis_queue import RedisQueue as _RedisQueue
-
     redis = Redis.from_url(settings.redis_url)
-    queue = _RedisQueue(redis)
+    queue = RedisQueue(redis)
     cutoff = datetime.now(UTC) - timedelta(seconds=settings.stuck_job_timeout_seconds)
     async with session_factory() as session:
         rows = await session.scalars(
@@ -43,8 +39,6 @@ async def recover_stuck_jobs(session_factory: async_sessionmaker) -> None:  # ty
         for job in stuck:
             logger.warning("Recovering stuck job %s", job.id)
             job.status = "queued"
-            from datetime import UTC
-
             job.updated_at = datetime.now(UTC)
             await queue.enqueue_job(job.id, job.correlation_id)
         if stuck:

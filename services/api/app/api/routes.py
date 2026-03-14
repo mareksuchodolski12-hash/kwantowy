@@ -159,15 +159,10 @@ async def list_jobs(
     return JobListResponse(jobs=await service.list_jobs())
 
 
-@router.get(
-    "/v1/jobs/{job_id}/result",
-    response_model=ResultResponse,
-    dependencies=[Depends(require_api_key)],
-)
-async def get_job_result(
+async def _get_result(
     job_id: str,
-    session: AsyncSession = Depends(get_session),
-    redis: Redis = Depends(get_redis),
+    session: AsyncSession,
+    redis: Redis,
 ) -> ResultResponse:
     service = JobService(session, RedisQueue(redis))
     result = await service.get_result(UUID(job_id))
@@ -178,6 +173,19 @@ async def get_job_result(
             detail=not_found(correlation_id, "result").model_dump(),
         )
     return ResultResponse(result=result)
+
+
+@router.get(
+    "/v1/jobs/{job_id}/result",
+    response_model=ResultResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def get_job_result(
+    job_id: str,
+    session: AsyncSession = Depends(get_session),
+    redis: Redis = Depends(get_redis),
+) -> ResultResponse:
+    return await _get_result(job_id, session, redis)
 
 
 @router.get(
@@ -191,13 +199,5 @@ async def get_result(
     redis: Redis = Depends(get_redis),
 ) -> ResultResponse:
     """Alias for GET /v1/jobs/{job_id}/result."""
-    service = JobService(session, RedisQueue(redis))
-    result = await service.get_result(UUID(job_id))
-    if result is None:
-        correlation_id = get_correlation_id()
-        raise HTTPException(
-            status_code=404,
-            detail=not_found(correlation_id, "result").model_dump(),
-        )
-    return ResultResponse(result=result)
+    return await _get_result(job_id, session, redis)
 
