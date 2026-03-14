@@ -47,8 +47,9 @@ class WorkerService:
 
         await self.jobs.increment_attempt(job_model.id)
         if job_model.queued_at:
+            queued = job_model.queued_at if job_model.queued_at.tzinfo else job_model.queued_at.replace(tzinfo=UTC)
             queue_latency_seconds.labels(provider=provider.value).observe(
-                max((datetime.now(UTC) - job_model.queued_at).total_seconds(), 0)
+                max((datetime.now(UTC) - queued).total_seconds(), 0)
             )
         # Commit RUNNING state so it is visible to API queries and stuck-job recovery.
         await self.session.commit()

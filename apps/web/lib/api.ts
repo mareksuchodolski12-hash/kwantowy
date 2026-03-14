@@ -100,6 +100,15 @@ export async function getResult(id: string): Promise<{ result: ExecutionResult }
   return res.json();
 }
 
+export async function getExperiment(id: string): Promise<Experiment> {
+  const res = await fetch(`${BASE_URL}/v1/experiments/${encodeURIComponent(id)}`, {
+    cache: 'no-store',
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('experiment fetch failed');
+  return res.json();
+}
+
 export async function listProviders(): Promise<ProviderCapabilities[]> {
   const res = await fetch(`${BASE_URL}/v1/providers`, {
     cache: 'no-store',

@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from quantum_contracts import (
+    Experiment,
     Job,
     ProviderCapabilities,
     ProviderRouteRequest,
@@ -186,6 +187,25 @@ async def list_experiments(
     """List all experiments."""
     service = JobService(session, RedisQueue(redis))
     return ExperimentListResponse(experiments=await service.list_experiments())
+
+
+@router.get(
+    "/v1/experiments/{experiment_id}",
+    response_model=Experiment,
+    dependencies=[Depends(require_api_key)],
+)
+async def get_experiment(
+    experiment_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    redis: Redis = Depends(get_redis),
+) -> Experiment:
+    """Get a single experiment by ID."""
+    service = JobService(session, RedisQueue(redis))
+    experiment = await service.get_experiment(experiment_id)
+    if experiment is None:
+        correlation_id = get_correlation_id()
+        raise HTTPException(status_code=404, detail=not_found(correlation_id, "experiment").model_dump())
+    return experiment
 
 
 @router.get("/v1/jobs/{job_id}", dependencies=[Depends(require_api_key)])

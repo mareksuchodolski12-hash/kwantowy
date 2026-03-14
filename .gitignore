@@ -38,5 +38,6 @@ services/api/test_idempotency.db
 services/api/test_platform.db
 services/api/test_providers.db
 test_api.db
+local_dev.db
 test_platform.db
 test_providers.db

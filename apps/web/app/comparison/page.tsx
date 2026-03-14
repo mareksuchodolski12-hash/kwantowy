@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { listJobs, getResult, type Job, type ExecutionResult } from '@/lib/api';
+import { listJobs, listExperiments, getResult, type Job, type Experiment, type ExecutionResult } from '@/lib/api';
 import ProviderBadge from '@/components/ProviderBadge';
 import ResultChart from '@/components/ResultChart';
 
 interface ComparisonRow {
   job: Job;
   result: ExecutionResult;
+  experimentName: string;
   selected: boolean;
 }
 
@@ -17,12 +18,15 @@ export default function ComparisonPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const { jobs } = await listJobs();
+      const [{ jobs }, { experiments }] = await Promise.all([listJobs(), listExperiments()]);
+      const expMap = new Map(experiments.map((e) => [e.id, e]));
       const succeeded = jobs.filter((j) => j.status === 'succeeded').slice(0, 20);
       const withResults = await Promise.all(
         succeeded.map(async (job) => {
           const res = await getResult(job.id);
-          return res ? { job, result: res.result, selected: false } : null;
+          if (!res) return null;
+          const exp = expMap.get(job.experiment_id);
+          return { job, result: res.result, experimentName: exp?.name ?? job.id.slice(0, 8), selected: false };
         }),
       );
       setRows(withResults.filter((r): r is ComparisonRow => r !== null));
@@ -59,7 +63,7 @@ export default function ComparisonPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Select</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Experiment</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Backend</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration (ms)</th>
@@ -67,7 +71,7 @@ export default function ComparisonPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {rows.map(({ job, result, selected: sel }) => (
+            {rows.map(({ job, result, experimentName, selected: sel }) => (
               <tr
                 key={job.id}
                 className={`cursor-pointer transition-colors ${sel ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
@@ -81,7 +85,7 @@ export default function ComparisonPage() {
                     className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
                   />
                 </td>
-                <td className="px-4 py-3 text-sm font-medium text-gray-900">{job.id.slice(0, 8)}</td>
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">{experimentName}</td>
                 <td className="px-4 py-3 text-sm">
                   <ProviderBadge provider={job.provider} />
                 </td>
@@ -107,10 +111,10 @@ export default function ComparisonPage() {
             Comparing {selected.length} result{selected.length > 1 ? 's' : ''}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {selected.map(({ job, result }) => (
+            {selected.map(({ job, result, experimentName }) => (
               <div key={job.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-800">{job.id.slice(0, 8)}</span>
+                  <span className="text-sm font-medium text-gray-800">{experimentName}</span>
                   <ProviderBadge provider={job.provider} />
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-sm">
