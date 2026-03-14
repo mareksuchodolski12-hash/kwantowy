@@ -33,3 +33,4 @@ htmlcov/
 
 *.tsbuildinfo
 services/api/test_api.db
+test_api.db

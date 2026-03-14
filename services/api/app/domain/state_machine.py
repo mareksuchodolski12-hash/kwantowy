@@ -14,5 +14,8 @@ class InvalidStateTransition(Exception):
 
 
 def ensure_transition(current: JobState, next_state: JobState) -> None:
-    if next_state not in ALLOWED_TRANSITIONS[current]:
+    allowed = ALLOWED_TRANSITIONS.get(current)
+    if allowed is None:
+        raise InvalidStateTransition(f"unknown state {current.value}")
+    if next_state not in allowed:
         raise InvalidStateTransition(f"invalid transition from {current.value} to {next_state.value}")

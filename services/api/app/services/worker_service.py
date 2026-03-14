@@ -34,11 +34,13 @@ class WorkerService:
     async def process_job(self, job_id: str, correlation_id: str) -> None:
         job_model = await self.session.scalar(select(JobModel).where(JobModel.id == job_id))
         if job_model is None:
+            await self.queue.ack(job_id, correlation_id)
             return
         provider = ExecutionProvider(job_model.provider)
         try:
             await self.jobs.transition(job_model.id, JobState.RUNNING)
         except InvalidStateTransition:
+            await self.queue.ack(job_id, correlation_id)
             return
 
         await self.jobs.increment_attempt(job_model.id)
@@ -51,6 +53,7 @@ class WorkerService:
         if exp is None:
             await self.jobs.transition(job_model.id, JobState.FAILED)
             await self.session.commit()
+            await self.queue.ack(job_id, correlation_id)
             return
 
         payload = CircuitPayload(qasm=exp.circuit_qasm, shots=exp.shots)
@@ -69,9 +72,13 @@ class WorkerService:
                 correlation_id=correlation_id,
             )
             await self.session.commit()
+            await self.queue.ack(job_id, correlation_id)
             execution_duration_seconds.labels(provider=provider.value).observe(result.duration_ms / 1000)
             jobs_succeeded_total.labels(provider=provider.value).inc()
-            logger.info("job succeeded", extra={"correlation_id": correlation_id, "job_id": str(job_id)})
+            logger.info(
+                "job succeeded",
+                extra={"correlation_id": correlation_id, "job_id": str(job_id), "provider": provider.value},
+            )
         except TimeoutError:
             await self._handle_failure(job_model, correlation_id, provider, "timeout")
         except Exception as exc:  # noqa: BLE001
@@ -86,6 +93,7 @@ class WorkerService:
     ) -> None:
         refreshed = await self.session.get(JobModel, job_model.id)
         if refreshed is None:
+            await self.queue.ack(str(job_model.id), correlation_id)
             return
         if refreshed.attempts < refreshed.max_attempts:
             await self.jobs.transition(refreshed.id, JobState.FAILED)
@@ -98,7 +106,13 @@ class WorkerService:
                 payload={"attempts": refreshed.attempts, "reason": reason, "provider": provider.value},
                 correlation_id=correlation_id,
             )
+            await self.session.commit()
+            await self.queue.ack(str(job_model.id), correlation_id)
             job_retries_total.labels(provider=provider.value).inc()
+            logger.warning(
+                "job retry scheduled",
+                extra={"correlation_id": correlation_id, "job_id": str(job_model.id), "provider": provider.value},
+            )
         else:
             await self.jobs.transition(refreshed.id, JobState.FAILED)
             await self.audit.log(
@@ -108,5 +122,10 @@ class WorkerService:
                 payload={"attempts": refreshed.attempts, "reason": reason, "provider": provider.value},
                 correlation_id=correlation_id,
             )
+            await self.session.commit()
+            await self.queue.move_to_dlq(str(job_model.id), correlation_id, reason)
             jobs_failed_total.labels(provider=provider.value).inc()
-        await self.session.commit()
+            logger.error(
+                "job failed permanently",
+                extra={"correlation_id": correlation_id, "job_id": str(job_model.id), "provider": provider.value},
+            )
