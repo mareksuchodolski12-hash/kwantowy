@@ -122,7 +122,7 @@ class ProviderRegistry:
         """
         cap = self._providers.get(provider)
         if cap:
-            self._providers[provider] = cap.model_copy(update=kwargs)  # type: ignore[arg-type]
+            self._providers[provider] = cap.model_copy(update=kwargs)
 
     def select(self, request: ProviderRouteRequest) -> ProviderRouteResponse:
         """Select the best provider for the given circuit requirements.
