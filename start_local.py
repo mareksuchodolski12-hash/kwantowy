@@ -112,7 +112,7 @@ async def _on_startup() -> None:
         # Key already exists in DB but .env.local is missing; re-create a fresh key
         async with SessionLocal() as session:
             repo = ApiKeyRepository(session)
-            raw, _ = await repo.create("local-dev-key-regen")
+            raw, _ = await repo.create("local-dev-key")
             await session.commit()
         env_local.write_text(
             f"NEXT_PUBLIC_API_URL=http://localhost:8000\nNEXT_PUBLIC_API_KEY={raw}\n"
