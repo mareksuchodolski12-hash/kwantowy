@@ -24,8 +24,8 @@ class JobModel(Base):
     __tablename__ = "jobs"
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    experiment_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("experiments.id"))
-    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    experiment_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("experiments.id"), index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     provider: Mapped[str] = mapped_column(String(32), nullable=False, default="local_simulator")
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
@@ -62,8 +62,8 @@ class AuditEventModel(Base):
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     aggregate_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    aggregate_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
-    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    aggregate_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     payload: Mapped[dict[str, str | int | float | bool | None]] = mapped_column(JSON, nullable=False)
     correlation_id: Mapped[str] = mapped_column(String(128), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

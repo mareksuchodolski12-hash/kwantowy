@@ -3,13 +3,16 @@ import logging
 import signal
 from datetime import UTC, datetime, timedelta
 
+from quantum_contracts import JobState
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.config import settings
 from app.db.models import JobModel
+from app.domain.state_machine import InvalidStateTransition
 from app.queue.redis_queue import RedisQueue
+from app.repositories.jobs import JobRepository
 from app.services.worker_service import WorkerService
 
 logger = logging.getLogger(__name__)
@@ -36,11 +39,15 @@ async def recover_stuck_jobs(session_factory: async_sessionmaker) -> None:  # ty
             )
         )
         stuck = list(rows)
+        jobs_repo = JobRepository(session)
         for job in stuck:
             logger.warning("Recovering stuck job %s", job.id)
-            job.status = "queued"
-            job.updated_at = datetime.now(UTC)
-            await queue.enqueue_job(job.id, job.correlation_id)
+            try:
+                await jobs_repo.transition(job.id, JobState.FAILED)
+                await jobs_repo.transition(job.id, JobState.QUEUED)
+                await queue.enqueue_job(job.id, job.correlation_id)
+            except InvalidStateTransition:
+                logger.error("Cannot recover job %s – invalid state %s", job.id, job.status)
         if stuck:
             await session.commit()
     await redis.aclose()
@@ -64,9 +71,12 @@ async def run() -> None:
         if not item:
             continue
         job_id, correlation_id = item
-        async with session_factory() as session:
-            worker = WorkerService(session, queue)
-            await worker.process_job(job_id, correlation_id)
+        try:
+            async with session_factory() as session:
+                worker = WorkerService(session, queue)
+                await worker.process_job(job_id, correlation_id)
+        except Exception:
+            logger.exception("Unhandled error processing job %s", job_id)
 
     logger.info("Worker shutdown complete")
     await redis.aclose()

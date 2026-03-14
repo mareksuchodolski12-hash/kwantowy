@@ -54,7 +54,6 @@ class JobService:
             idempotency_key=idempotency_key,
         )
         await self.jobs.transition(job.id, JobState.QUEUED)
-        await self.queue.enqueue_job(job.id, correlation_id)
         await self.audit.log(
             aggregate_type="job",
             aggregate_id=job.id,
@@ -63,8 +62,13 @@ class JobService:
             correlation_id=correlation_id,
         )
         await self.session.commit()
+        # Enqueue AFTER commit so the worker always finds the job in the database.
+        await self.queue.enqueue_job(job.id, correlation_id)
         jobs_submitted_total.labels(provider=request.provider.value).inc()
-        logger.info("job submitted", extra={"correlation_id": correlation_id, "job_id": str(job.id)})
+        logger.info(
+            "job submitted",
+            extra={"correlation_id": correlation_id, "job_id": str(job.id), "provider": request.provider.value},
+        )
         queued_job = await self.jobs.get(job.id)
         if queued_job is None:
             raise ValueError("job disappeared after commit")
