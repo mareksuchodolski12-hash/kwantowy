@@ -33,12 +33,36 @@ An open developer platform for quantum computing — submit QASM circuits, orche
 
 ```bash
 make bootstrap    # Install all dependencies (SDK, CLI, API, web)
-make up           # Start Postgres + Redis
+make up           # Start Postgres + Redis (infrastructure only)
 make migrate      # Apply database migrations
-make api          # Start API server (port 8000)
-make worker       # Start job worker (separate terminal)
-make web          # Start web console (port 3000)
+make api          # Start API server on port 8000 (terminal 1)
+make worker       # Start job worker (terminal 2)
+make web          # Start web console on port 3000 (terminal 3)
 ```
+
+> **Tip:** For zero-Docker local development using SQLite + fakeredis, run
+> `python start_local.py` instead of steps 2–5 above, then `make web` in a
+> separate terminal.
+
+### Full Docker Stack
+
+To run **all** services (including observability) via Docker:
+
+```bash
+make up-all       # Start all services in Docker (postgres, redis, api, worker, web, prometheus, grafana, loki)
+```
+
+To start infrastructure and observability only (then run api/worker/web locally):
+
+```bash
+make up-infra     # Start Postgres, Redis, Prometheus, Grafana, Loki
+make migrate
+make api          # terminal 1
+make worker       # terminal 2
+make web          # terminal 3
+```
+
+### Service URLs
 
 | Service | URL |
 |---------|-----|
@@ -154,6 +178,25 @@ make test       # pytest
 make format     # ruff format
 make benchmark  # Run auto-benchmark worker
 ```
+
+### Makefile Targets
+
+| Target | Description |
+|--------|-------------|
+| `make bootstrap` | Install all Python and Node dependencies |
+| `make up` | Start Postgres + Redis only |
+| `make up-infra` | Start Postgres, Redis, Prometheus, Grafana, Loki |
+| `make up-all` | Start all services via Docker Compose |
+| `make down` | Stop all Docker services |
+| `make migrate` | Apply database migrations (Alembic) |
+| `make api` | Start API server locally (port 8000) |
+| `make worker` | Start job worker locally |
+| `make web` | Start web console locally (port 3000) |
+| `make lint` | Run ruff + eslint |
+| `make typecheck` | Run mypy + tsc |
+| `make test` | Run pytest |
+| `make build` | Build Docker images |
+| `make benchmark` | Run auto-benchmark worker |
 
 ## Documentation
 

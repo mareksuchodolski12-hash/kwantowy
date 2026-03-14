@@ -1,4 +1,4 @@
-.PHONY: bootstrap up down lint typecheck test test-integration format migrate worker api web policy build demo benchmark
+.PHONY: bootstrap up up-all up-infra down lint typecheck test test-integration format migrate worker api web policy build demo benchmark
 
 bootstrap:
 	python -m pip install --upgrade pip
@@ -11,7 +11,13 @@ bootstrap:
 	pre-commit install
 
 up:
+	docker compose up -d postgres redis
+
+up-all:
 	docker compose up -d
+
+up-infra:
+	docker compose up -d postgres redis prometheus grafana loki
 
 down:
 	docker compose down
@@ -57,9 +63,11 @@ format:
 
 demo:
 	@echo "1) make up && make migrate"
-	@echo "2) make api, make worker, make web"
-	@echo "3) submit run from http://localhost:3000"
-	@echo "4) inspect metrics at /metrics, Prometheus :9090, Grafana :3001"
+	@echo "2) In separate terminals: make api, make worker, make web"
+	@echo "3) Submit a run from http://localhost:3000"
+	@echo "4) Inspect metrics at /metrics, Prometheus :9090, Grafana :3001"
+	@echo ""
+	@echo "Or run the full Docker stack: make up-all"
 
 benchmark:
 	PYTHONPATH=services/api python workers/benchmark-runner/benchmark_worker.py

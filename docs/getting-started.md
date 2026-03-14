@@ -16,7 +16,7 @@ cd kwantowy
 # 2. Install dependencies
 make bootstrap
 
-# 3. Start infrastructure (Postgres + Redis)
+# 3. Start infrastructure (Postgres + Redis only)
 make up
 
 # 4. Apply database migrations
@@ -29,6 +29,22 @@ make api
 make worker
 
 # 7. In another terminal — start the web console (port 3000)
+make web
+```
+
+## Zero-Docker Local Development
+
+For development without running Docker at all, use the local launcher
+which uses SQLite + fakeredis:
+
+```bash
+# Install dependencies
+make bootstrap
+
+# Start API + background worker (no Docker needed)
+python start_local.py
+
+# In another terminal — start the web console
 make web
 ```
 
@@ -97,3 +113,21 @@ qcp experiment run bell.qasm --provider local_simulator
 | API Docs (ReDoc) | http://localhost:8000/redoc |
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3001 |
+
+## Full Docker Stack
+
+To start all services (including observability) via Docker:
+
+```bash
+make up-all
+```
+
+To start only infrastructure and observability (then run api/worker/web locally):
+
+```bash
+make up-infra
+make migrate
+make api          # terminal 1
+make worker       # terminal 2
+make web          # terminal 3
+```
