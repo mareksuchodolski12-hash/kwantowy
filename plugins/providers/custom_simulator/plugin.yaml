@@ -1,0 +1,4 @@
+name: custom_simulator
+version: 0.1.0
+description: Example custom simulator provider plugin
+entry_point: plugins.providers.custom_simulator.provider:CustomSimulatorProvider

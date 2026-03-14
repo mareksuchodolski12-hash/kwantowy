@@ -8,7 +8,18 @@ from app.core.observability import MetricsMiddleware, configure_tracing, instrum
 configure_logging()
 configure_tracing()
 
-app = FastAPI(title="Quantum Control Plane API")
+app = FastAPI(
+    title="Quantum Control Plane API",
+    description=(
+        "REST API for the Quantum Control Plane — submit quantum circuits, "
+        "manage experiments, orchestrate workflows, and benchmark providers."
+    ),
+    version="0.3.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    license_info={"name": "MIT"},
+)
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(MetricsMiddleware)
 app.include_router(router)

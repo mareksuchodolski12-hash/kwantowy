@@ -28,6 +28,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/comparison" className="text-gray-300 hover:text-white transition-colors">
                 Comparison
               </Link>
+              <Link href="/providers" className="text-gray-300 hover:text-white transition-colors">
+                Providers
+              </Link>
+              <Link href="/demo" className="text-gray-300 hover:text-white transition-colors">
+                Demo
+              </Link>
             </nav>
           </div>
         </header>

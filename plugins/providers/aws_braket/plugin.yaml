@@ -1,0 +1,4 @@
+name: aws_braket
+version: 0.1.0
+description: Amazon Braket quantum hardware and simulator provider
+entry_point: plugins.providers.aws_braket.provider:AwsBraketProvider
