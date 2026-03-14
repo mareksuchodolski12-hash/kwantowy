@@ -77,8 +77,8 @@ export default function ComparisonPage() {
                   <input
                     type="checkbox"
                     checked={sel}
-                    onChange={() => toggleRow(job.id)}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    readOnly
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
                   />
                 </td>
                 <td className="px-4 py-3 text-sm font-medium text-gray-900">{job.id.slice(0, 8)}</td>

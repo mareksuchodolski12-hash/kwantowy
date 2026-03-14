@@ -8,9 +8,10 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLES[status] ?? 'bg-gray-100 text-gray-700';
+  const label = status.charAt(0).toUpperCase() + status.slice(1);
   return (
     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
-      {status}
+      {label}
     </span>
   );
 }
