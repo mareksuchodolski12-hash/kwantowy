@@ -1,5 +1,6 @@
 import logging
 from datetime import UTC, datetime
+from uuid import UUID
 
 from quantum_contracts import CircuitPayload, ExecutionProvider, JobState
 from sqlalchemy import select
@@ -32,7 +33,8 @@ class WorkerService:
         self.queue = queue
 
     async def process_job(self, job_id: str, correlation_id: str) -> None:
-        job_model = await self.session.scalar(select(JobModel).where(JobModel.id == job_id))
+        job_uuid = UUID(job_id)
+        job_model = await self.session.scalar(select(JobModel).where(JobModel.id == job_uuid))
         if job_model is None:
             await self.queue.ack(job_id, correlation_id)
             return
@@ -48,6 +50,8 @@ class WorkerService:
             queue_latency_seconds.labels(provider=provider.value).observe(
                 max((datetime.now(UTC) - job_model.queued_at).total_seconds(), 0)
             )
+        # Commit RUNNING state so it is visible to API queries and stuck-job recovery.
+        await self.session.commit()
 
         exp = await self.session.scalar(select(ExperimentModel).where(ExperimentModel.id == job_model.experiment_id))
         if exp is None:
@@ -98,7 +102,6 @@ class WorkerService:
         if refreshed.attempts < refreshed.max_attempts:
             await self.jobs.transition(refreshed.id, JobState.FAILED)
             await self.jobs.transition(refreshed.id, JobState.QUEUED)
-            await self.queue.enqueue_job(refreshed.id, correlation_id)
             await self.audit.log(
                 aggregate_type="job",
                 aggregate_id=refreshed.id,
@@ -106,7 +109,9 @@ class WorkerService:
                 payload={"attempts": refreshed.attempts, "reason": reason, "provider": provider.value},
                 correlation_id=correlation_id,
             )
+            # Commit BEFORE enqueue so the worker always finds the updated row.
             await self.session.commit()
+            await self.queue.enqueue_job(refreshed.id, correlation_id)
             await self.queue.ack(str(job_model.id), correlation_id)
             job_retries_total.labels(provider=provider.value).inc()
             logger.warning(

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import signal
+import time
 from datetime import UTC, datetime, timedelta
 
 from quantum_contracts import JobState
@@ -19,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 _shutdown = False
 
+# How often (seconds) the worker checks for timed-out messages in the processing set.
+_REQUEUE_INTERVAL_SECONDS = 60
+
 
 def _handle_signal(sig: int, frame: object) -> None:
     global _shutdown
@@ -26,10 +30,13 @@ def _handle_signal(sig: int, frame: object) -> None:
     _shutdown = True
 
 
-async def recover_stuck_jobs(session_factory: async_sessionmaker) -> None:  # type: ignore[type-arg]
-    """Transition RUNNING jobs left over from a previous crash back to QUEUED."""
-    redis = Redis.from_url(settings.redis_url)
-    queue = RedisQueue(redis)
+async def recover_stuck_jobs(session_factory: async_sessionmaker, queue: RedisQueue) -> None:  # type: ignore[type-arg]
+    """Transition RUNNING jobs left over from a previous crash back to QUEUED.
+
+    Also re-enqueues any messages stuck in the processing set beyond the
+    visibility timeout (covers crashes that happened after dequeue but
+    before ack).
+    """
     cutoff = datetime.now(UTC) - timedelta(seconds=settings.stuck_job_timeout_seconds)
     async with session_factory() as session:
         rows = await session.scalars(
@@ -45,12 +52,17 @@ async def recover_stuck_jobs(session_factory: async_sessionmaker) -> None:  # ty
             try:
                 await jobs_repo.transition(job.id, JobState.FAILED)
                 await jobs_repo.transition(job.id, JobState.QUEUED)
-                await queue.enqueue_job(job.id, job.correlation_id)
             except InvalidStateTransition:
                 logger.error("Cannot recover job %s – invalid state %s", job.id, job.status)
-        if stuck:
+                continue
+            # Commit before enqueue so the worker always finds the updated row.
             await session.commit()
-    await redis.aclose()
+            await queue.enqueue_job(job.id, job.correlation_id)
+
+    # Re-enqueue messages stuck in the processing sorted set.
+    requeued = await queue.requeue_timed_out(settings.stuck_job_timeout_seconds)
+    if requeued:
+        logger.info("Re-enqueued %d timed-out messages from processing set", requeued)
 
 
 async def run() -> None:
@@ -63,12 +75,22 @@ async def run() -> None:
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     logger.info("Worker starting – recovering any stuck jobs")
-    await recover_stuck_jobs(session_factory)
+    await recover_stuck_jobs(session_factory, queue)
 
     logger.info("Worker ready – polling queue")
+    last_requeue_check = time.monotonic()
     while not _shutdown:
         item = await queue.dequeue(timeout=5)
         if not item:
+            # Periodically re-enqueue timed-out messages from the processing set.
+            if time.monotonic() - last_requeue_check >= _REQUEUE_INTERVAL_SECONDS:
+                try:
+                    requeued = await queue.requeue_timed_out(settings.stuck_job_timeout_seconds)
+                    if requeued:
+                        logger.info("Re-enqueued %d timed-out messages", requeued)
+                except Exception:
+                    logger.exception("Error during requeue_timed_out")
+                last_requeue_check = time.monotonic()
             continue
         job_id, correlation_id = item
         try:

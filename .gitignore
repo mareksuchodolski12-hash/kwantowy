@@ -33,4 +33,6 @@ htmlcov/
 
 *.tsbuildinfo
 services/api/test_api.db
+services/api/test_worker.db
+services/api/test_idempotency.db
 test_api.db
