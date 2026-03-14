@@ -20,6 +20,7 @@ npm-debug.log*
 # Env files
 .env
 .env.*
+!.env.example
 
 # Coverage
 .coverage
