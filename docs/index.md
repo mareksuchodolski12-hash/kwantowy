@@ -16,3 +16,4 @@ Welcome to the QCP documentation.
 | [Benchmarking](benchmarking.md) | Provider calibration and leaderboard |
 | [ADRs](adr/) | Architecture Decision Records |
 | [Runbooks](runbooks/) | Operational guides |
+| [System Analysis](analysis/system-analysis.md) | Comprehensive system analysis and demo plan |
