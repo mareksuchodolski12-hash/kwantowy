@@ -82,9 +82,12 @@ class WorkerService:
         try:
             result = await adapter.run(payload, job_model.timeout_seconds, str(job_model.id))
             # Enrich result with circuit metadata
-            result.circuit_depth = _estimate_depth(exp.circuit_qasm)
-            result.gate_count = _count_gates(exp.circuit_qasm)
-            result.qubit_count = _parse_qubit_count(exp.circuit_qasm)
+            try:
+                result.circuit_depth = _estimate_depth(exp.circuit_qasm)
+                result.gate_count = _count_gates(exp.circuit_qasm)
+                result.qubit_count = _parse_qubit_count(exp.circuit_qasm)
+            except Exception:  # noqa: BLE001
+                logger.warning("failed to extract circuit metadata", extra={"job_id": str(job_model.id)})
             if result.remote_run_id:
                 await self.jobs.set_remote_run_id(job_model.id, result.remote_run_id)
             await self.results.save(result)

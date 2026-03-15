@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ResultChartProps {
   counts: Record<string, number>;
@@ -36,11 +36,7 @@ export default function ResultChart({ counts, title }: ResultChartProps) {
               return [value, 'Count'];
             }}
           />
-          <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]}>
-            {data.map((entry) => (
-              <Cell key={entry.state} fill="#6366f1" />
-            ))}
-          </Bar>
+          <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
