@@ -19,9 +19,25 @@ from app.queue.redis_queue import RedisQueue
 from app.repositories.audit import AuditRepository
 from app.repositories.jobs import JobRepository
 from app.repositories.results import ResultRepository
+from app.services.circuit_optimiser import _count_gates, _estimate_depth
 from app.services.provider_factory import get_provider
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_qubit_count(qasm: str) -> int:
+    """Parse the total qubit count from qreg declarations in QASM."""
+    total = 0
+    for line in qasm.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("qreg "):
+            try:
+                bracket_start = stripped.index("[")
+                bracket_end = stripped.index("]")
+                total += int(stripped[bracket_start + 1 : bracket_end])
+            except (ValueError, IndexError):
+                pass
+    return total
 
 
 class WorkerService:
@@ -65,6 +81,13 @@ class WorkerService:
         adapter = get_provider(provider)
         try:
             result = await adapter.run(payload, job_model.timeout_seconds, str(job_model.id))
+            # Enrich result with circuit metadata
+            try:
+                result.circuit_depth = _estimate_depth(exp.circuit_qasm)
+                result.gate_count = _count_gates(exp.circuit_qasm)
+                result.qubit_count = _parse_qubit_count(exp.circuit_qasm)
+            except Exception:  # noqa: BLE001
+                logger.warning("failed to extract circuit metadata", extra={"job_id": str(job_model.id)})
             if result.remote_run_id:
                 await self.jobs.set_remote_run_id(job_model.id, result.remote_run_id)
             await self.results.save(result)

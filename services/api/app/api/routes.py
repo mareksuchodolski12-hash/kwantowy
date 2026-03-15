@@ -57,6 +57,7 @@ from app.services.cost_governance import CostGovernanceService
 from app.services.experiment_versioning import ExperimentVersionRepository
 from app.services.job_service import JobService, not_found
 from app.services.provider_registry import get_provider_registry
+from app.services.qasm_validator import validate_qasm
 from app.services.result_comparator import compare_results
 from app.services.tenant import TenantRepository
 from app.services.workflow_engine import WorkflowEngine
@@ -141,6 +142,9 @@ async def _submit(
     session: AsyncSession,
     redis: Redis,
 ) -> SubmitExperimentResponse:
+    validation_error = validate_qasm(body.circuit.qasm)
+    if validation_error is not None:
+        raise HTTPException(status_code=422, detail=validation_error.model_dump())
     service = JobService(session, RedisQueue(redis))
     return await service.submit(body, idempotency_key)
 

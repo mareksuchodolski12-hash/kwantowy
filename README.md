@@ -155,6 +155,17 @@ All endpoints are under `/v1/` with OpenAPI documentation at `/docs`.
 └── examples/              # Quickstart scripts
 ```
 
+## Example Experiments
+
+### Bell State
+Creates a maximally entangled pair of qubits using a Hadamard gate followed by a CNOT gate. Demonstrates quantum entanglement — measurement results are correlated: both qubits always agree (`00` or `11`, each ≈ 50%).
+
+### GHZ State
+Extends the Bell State to 3 qubits using a Hadamard gate and two successive CNOT gates. Produces the Greenberger–Horne–Zeilinger state where all three qubits are entangled: only `000` and `111` appear (each ≈ 50%). No partial correlations exist, demonstrating genuine multipartite entanglement.
+
+### Grover (2-qubit)
+Implements Grover's search algorithm on 2 qubits to find a marked item in an unsorted list of 4 elements with a single query. Demonstrates quadratic quantum speedup over classical search.
+
 ## Provider Plugins
 
 External providers can be added under `plugins/providers/`:

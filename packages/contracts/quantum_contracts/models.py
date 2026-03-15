@@ -91,6 +91,9 @@ class ExecutionResult(BaseModel):
     duration_ms: int
     completed_at: datetime
     remote_run_id: str | None = None
+    circuit_depth: int | None = None
+    qubit_count: int | None = None
+    gate_count: int | None = None
 
 
 class ErrorResponse(BaseModel):
