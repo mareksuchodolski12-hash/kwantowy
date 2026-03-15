@@ -13,6 +13,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   redis:
     image: redis:7
@@ -22,6 +23,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   api:
     build:
@@ -43,6 +45,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   worker:
     build:
@@ -63,6 +72,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
 
   web:
     build:
@@ -80,6 +90,7 @@ services:
       - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports: ["9090:9090"]
     depends_on: [api]
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:11.3.1
@@ -87,6 +98,7 @@ services:
       - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports: ["3001:3000"]
+    restart: unless-stopped
 
   loki:
     image: grafana/loki:3.2.1
@@ -94,7 +106,7 @@ services:
     volumes:
       - ./infra/observability/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
     ports: ["3100:3100"]
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-
