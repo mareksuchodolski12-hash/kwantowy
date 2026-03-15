@@ -11,6 +11,11 @@ const CIRCUITS: { label: string; name: string; qasm: string }[] = [
     qasm: 'OPENQASM 2.0; include "qelib1.inc"; qreg q[2]; creg c[2]; h q[0]; cx q[0],q[1]; measure q[0] -> c[0]; measure q[1] -> c[1];',
   },
   {
+    label: 'GHZ State (3 qubits)',
+    name: 'ghz-state-demo',
+    qasm: 'OPENQASM 2.0;\ninclude "qelib1.inc";\n\nqreg q[3];\ncreg c[3];\n\nh q[0];\ncx q[0],q[1];\ncx q[1],q[2];\n\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];',
+  },
+  {
     label: 'Grover (2-qubit)',
     name: 'grover-demo',
     qasm: 'OPENQASM 2.0; include "qelib1.inc"; qreg q[2]; creg c[2]; h q[0]; h q[1]; cz q[0],q[1]; h q[0]; h q[1]; x q[0]; x q[1]; h q[1]; cx q[0],q[1]; h q[1]; x q[0]; x q[1]; h q[0]; h q[1]; measure q[0] -> c[0]; measure q[1] -> c[1];',
@@ -83,7 +88,7 @@ export default function DemoPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Circuit</label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {CIRCUITS.map((c, idx) => (
               <button
                 key={c.name}

@@ -20,6 +20,9 @@ class ResultRepository:
             shots=result.shots,
             duration_ms=result.duration_ms,
             completed_at=result.completed_at,
+            circuit_depth=result.circuit_depth,
+            qubit_count=result.qubit_count,
+            gate_count=result.gate_count,
         )
         await self.session.merge(model)
         await self.session.flush()
@@ -37,4 +40,7 @@ class ResultRepository:
             shots=model.shots,
             duration_ms=model.duration_ms,
             completed_at=model.completed_at,
+            circuit_depth=model.circuit_depth,
+            qubit_count=model.qubit_count,
+            gate_count=model.gate_count,
         )

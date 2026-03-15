@@ -54,6 +54,9 @@ class ResultModel(Base):
     shots: Mapped[int] = mapped_column(Integer, nullable=False)
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    circuit_depth: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    qubit_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gate_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     job: Mapped[JobModel] = relationship(back_populates="result")
 
