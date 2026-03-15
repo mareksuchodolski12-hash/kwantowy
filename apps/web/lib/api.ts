@@ -61,7 +61,10 @@ export async function submitExperiment(payload: SubmitPayload): Promise<{ experi
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('submit failed');
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(body || `submit failed (${res.status})`);
+  }
   return res.json();
 }
 
@@ -88,7 +91,10 @@ export async function getJob(id: string): Promise<Job> {
     cache: 'no-store',
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('job fetch failed');
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(body || `job fetch failed (${res.status})`);
+  }
   return res.json();
 }
 

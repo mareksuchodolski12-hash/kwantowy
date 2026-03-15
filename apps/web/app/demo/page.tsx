@@ -68,9 +68,19 @@ export default function DemoPage() {
           setError('Job failed.');
           break;
         }
+        if (i === 29) {
+          setError('Timed out waiting for result. The job may still be running — check the Runs page.');
+          break;
+        }
       }
-    } catch {
-      setError('Failed to run experiment. Is the API server running?');
+    } catch (err: unknown) {
+      if (err instanceof TypeError) {
+        setError('Failed to connect to the API server. Is it running?');
+      } else if (err instanceof Error && err.message) {
+        setError(`Experiment error: ${err.message}`);
+      } else {
+        setError('An unexpected error occurred.');
+      }
     } finally {
       setRunning(false);
     }
