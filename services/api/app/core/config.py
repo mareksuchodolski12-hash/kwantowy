@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:3000"
 
+    # Logging
+    log_level: str = "INFO"
+
     # Worker settings
     stuck_job_timeout_seconds: int = 120
 

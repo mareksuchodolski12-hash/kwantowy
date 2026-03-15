@@ -23,8 +23,10 @@ class JsonFormatter(logging.Formatter):
 
 
 def configure_logging() -> None:
+    from app.core.config import settings
+
     handler = logging.StreamHandler()
     handler.setFormatter(JsonFormatter())
     root = logging.getLogger()
     root.handlers = [handler]
-    root.setLevel(logging.INFO)
+    root.setLevel(getattr(logging, settings.log_level.upper(), logging.INFO))

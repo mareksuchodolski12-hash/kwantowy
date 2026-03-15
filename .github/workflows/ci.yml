@@ -55,12 +55,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.30.0
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           scan-type: fs
           scan-ref: .
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+          exit-code: '0'
         continue-on-error: true
       - uses: anchore/sbom-action@v0
         with:

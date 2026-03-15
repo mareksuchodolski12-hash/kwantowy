@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: qcp-worker
+  labels:
+    app.kubernetes.io/name: qcp-worker
+    app.kubernetes.io/part-of: quantum-control-plane
 spec:
   replicas: 1
   selector:
@@ -11,7 +14,12 @@ spec:
     metadata:
       labels:
         app: qcp-worker
+        app.kubernetes.io/name: qcp-worker
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: worker
           image: {{ .Values.image.worker | quote }}
@@ -27,3 +35,12 @@ spec:
             limits:
               cpu: {{ .Values.resources.worker.limits.cpu | quote }}
               memory: {{ .Values.resources.worker.limits.memory | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
