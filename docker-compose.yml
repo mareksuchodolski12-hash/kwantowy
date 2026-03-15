@@ -2,14 +2,14 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: quantum
-      POSTGRES_PASSWORD: quantum
-      POSTGRES_DB: quantum_control_plane
+      POSTGRES_USER: ${POSTGRES_USER:-quantum}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantum}
+      POSTGRES_DB: ${POSTGRES_DB:-quantum_control_plane}
     ports: ["5432:5432"]
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U quantum"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quantum}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -28,8 +28,8 @@ services:
       context: .
       dockerfile: services/api/Dockerfile
     environment:
-      QCP_DATABASE_URL: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
-      QCP_REDIS_URL: redis://redis:6379/0
+      QCP_DATABASE_URL: ${QCP_DATABASE_URL:-postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane}
+      QCP_REDIS_URL: ${QCP_REDIS_URL:-redis://redis:6379/0}
       QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
       QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
       QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
@@ -49,8 +49,8 @@ services:
       context: .
       dockerfile: workers/quantum-runner/Dockerfile
     environment:
-      QCP_DATABASE_URL: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
-      QCP_REDIS_URL: redis://redis:6379/0
+      QCP_DATABASE_URL: ${QCP_DATABASE_URL:-postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane}
+      QCP_REDIS_URL: ${QCP_REDIS_URL:-redis://redis:6379/0}
       QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
       QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
       QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
