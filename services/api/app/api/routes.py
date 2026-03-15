@@ -1,3 +1,5 @@
+import logging
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -62,6 +64,8 @@ from app.services.result_comparator import compare_results
 from app.services.tenant import TenantRepository
 from app.services.workflow_engine import WorkflowEngine
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -75,11 +79,25 @@ async def readyz(
     session: AsyncSession = Depends(get_session),
     redis: Redis = Depends(get_redis),
 ) -> dict[str, str]:
-    await session.execute(text("SELECT 1"))
-    from typing import Any, cast
+    checks: dict[str, str] = {}
+    try:
+        await session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        logger.exception("Readiness check failed: database unavailable")
+        checks["database"] = "unavailable"
 
-    await cast(Any, redis.ping())
-    return {"status": "ready"}
+    try:
+        await cast(Any, redis.ping())
+        checks["redis"] = "ok"
+    except Exception:
+        logger.exception("Readiness check failed: redis unavailable")
+        checks["redis"] = "unavailable"
+
+    if all(v == "ok" for v in checks.values()):
+        return {"status": "ready", **checks}
+
+    raise HTTPException(status_code=503, detail={"status": "unavailable", **checks})
 
 
 # ---------------------------------------------------------------------------

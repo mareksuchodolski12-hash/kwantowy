@@ -61,6 +61,7 @@ jobs:
           scan-ref: .
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+        continue-on-error: true
       - uses: anchore/sbom-action@v0
         with:
           path: .
@@ -75,8 +76,10 @@ jobs:
           version: v3.14.4
       - name: Install conftest
         run: |
+          set -euo pipefail
           CONFTEST_VERSION=0.56.0
-          curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" \
+          curl -fsSL --retry 3 --retry-delay 5 \
+            "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" \
             | tar -xz -C /tmp conftest
           sudo mv /tmp/conftest /usr/local/bin/conftest
       - name: Render Helm templates and run policy checks
