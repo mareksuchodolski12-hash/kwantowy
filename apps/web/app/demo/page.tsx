@@ -70,6 +70,7 @@ export default function DemoPage() {
         }
         if (i === 29) {
           setError('Timed out waiting for result. The job may still be running — check the Runs page.');
+          break;
         }
       }
     } catch (err: unknown) {
