@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     app_name: str = "quantum-control-plane-api"
     environment: str = "dev"
+    # Default is for local development only; always set QCP_DATABASE_URL in production.
     database_url: str = "postgresql+asyncpg://quantum:quantum@localhost:5432/quantum_control_plane"
     redis_url: str = "redis://localhost:6379/0"
     queue_name: str = "quantum.jobs"

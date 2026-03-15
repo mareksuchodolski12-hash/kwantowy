@@ -4,7 +4,9 @@ image:
   web: ghcr.io/example/qcp-web:latest
 
 env:
-  databaseUrl: postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane
+  # IMPORTANT: Override these values for every deployment.
+  # Do NOT use the placeholder defaults in production — change both username and password.
+  databaseUrl: "postgresql+asyncpg://quantum:CHANGEME@postgres:5432/quantum_control_plane"
   redisUrl: redis://redis:6379/0
 
 resources:
