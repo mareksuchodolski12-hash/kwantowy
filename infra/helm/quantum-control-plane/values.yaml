@@ -5,7 +5,7 @@ image:
 
 env:
   # IMPORTANT: Override these values for every deployment.
-  # Do NOT use the placeholder defaults in production.
+  # Do NOT use the placeholder defaults in production — change both username and password.
   databaseUrl: "postgresql+asyncpg://quantum:CHANGEME@postgres:5432/quantum_control_plane"
   redisUrl: redis://redis:6379/0
 
