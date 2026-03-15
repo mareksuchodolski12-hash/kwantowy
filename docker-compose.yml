@@ -33,6 +33,7 @@ services:
       QCP_DATABASE_URL: ${QCP_DATABASE_URL:-postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane}
       QCP_REDIS_URL: ${QCP_REDIS_URL:-redis://redis:6379/0}
       QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
+      QCP_LOG_LEVEL: ${QCP_LOG_LEVEL:-INFO}
       QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
       QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
       QCP_IBM_RUNTIME_CHANNEL: ${QCP_IBM_RUNTIME_CHANNEL:-ibm_quantum}
@@ -61,6 +62,7 @@ services:
       QCP_DATABASE_URL: ${QCP_DATABASE_URL:-postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane}
       QCP_REDIS_URL: ${QCP_REDIS_URL:-redis://redis:6379/0}
       QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
+      QCP_LOG_LEVEL: ${QCP_LOG_LEVEL:-INFO}
       QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
       QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
       QCP_IBM_RUNTIME_CHANNEL: ${QCP_IBM_RUNTIME_CHANNEL:-ibm_quantum}
@@ -73,6 +75,12 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, signal; os.kill(1, 0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   web:
     build:

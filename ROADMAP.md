@@ -5,12 +5,13 @@
 ### ✅ Delivered
 
 - **Core Platform**: Experiment submission, job queue, worker execution, result storage
-- **Multi-Provider Support**: Local simulator, IBM Runtime, Aer, IonQ (stub), Rigetti (stub)
+- **Local Simulation**: Qiskit BasicProvider and Aer simulator backends
+- **IBM Runtime (feature-flagged)**: Integration via `QCP_IBM_RUNTIME_ENABLED`; requires a valid IBM Quantum token
 - **Workflow Orchestration**: Declarative multi-step experiment pipelines
 - **Provider Benchmarking**: Calibration circuits, fidelity tracking, Prometheus metrics
 - **Cost Governance**: Budget management, per-job cost tracking, alerts
 - **Multi-Tenant Platform**: Organisation → Team → Project hierarchy
-- **Circuit Optimisation**: Transpilation pipeline with noise-aware mapping
+- **Circuit Optimisation**: Gate counting, depth estimation, shot optimisation
 - **Experiment Versioning**: Circuit lineage tracking with version history
 - **Result Comparison**: Side-by-side provider comparison with fidelity scores
 - **Dashboard**: Next.js web console with experiment management and result charts
@@ -18,13 +19,15 @@
 - **Python SDK**: `QCPClient` with submit, poll, and wait-for-result helpers
 - **CLI Tool**: `qcp` command for terminal-based experiment management
 - **Provider Leaderboard**: Ranked hardware comparison page
-- **Interactive Demo**: One-click Bell State, Grover, and Deutsch-Jozsa experiments
+- **Interactive Demo**: One-click Bell State, Grover, and GHZ experiments
 - **Plugin System**: Extensible provider interface for external backends
 - **Auto-Benchmark Worker**: Periodic calibration with metric updates
 
 ### 🔜 Next (v0.4)
 
-- **Real Hardware Execution**: Production IonQ and Rigetti adapter implementations
+- **IonQ Adapter**: Production IonQ provider implementation (interface defined, not yet functional)
+- **Rigetti Adapter**: Production Rigetti provider implementation (interface defined, not yet functional)
+- **AWS Braket Plugin**: Amazon Braket backend (stub exists in `plugins/providers/aws_braket/`)
 - **Error Mitigation**: Zero-noise extrapolation and measurement error mitigation
 - **Pulse-Level Control**: Qiskit Pulse integration for hardware-native gates
 - **Experiment Templates**: Shareable experiment blueprints with parameterisation

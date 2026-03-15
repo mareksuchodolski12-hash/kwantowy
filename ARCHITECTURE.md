@@ -106,7 +106,7 @@ API calls.  The adapter interface:
 
 ### Database Schema
 
-The PostgreSQL database has 12 tables managed by SQLAlchemy + Alembic:
+The PostgreSQL database has 14 tables managed by SQLAlchemy + Alembic:
 
 | Table | Purpose |
 |-------|---------|
