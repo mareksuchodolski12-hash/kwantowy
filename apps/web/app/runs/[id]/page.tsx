@@ -39,7 +39,7 @@ export default function RunDetailsPage() {
   }, [job, fetchData]);
 
   if (loading) {
-    return <p className="text-gray-500 py-8 text-center">Loading run details…</p>;
+    return <p className="text-text-muted py-8 text-center">Loading run details…</p>;
   }
 
   if (!job) {
@@ -49,49 +49,49 @@ export default function RunDetailsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Run Details</h2>
-        <p className="text-sm text-gray-500 mt-1">Job ID: {job.id}</p>
+        <h2 className="text-2xl font-bold text-text-primary">Run Details</h2>
+        <p className="text-sm text-text-muted mt-1">Job ID: {job.id}</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="glass rounded-xl glow-border p-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <p className="text-xs text-gray-500 uppercase">Status</p>
+            <p className="text-xs text-text-muted uppercase">Status</p>
             <StatusBadge status={job.status} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase">Provider</p>
+            <p className="text-xs text-text-muted uppercase">Provider</p>
             <ProviderBadge provider={job.provider} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase">Attempts</p>
+            <p className="text-xs text-text-muted uppercase">Attempts</p>
             <p className="text-sm font-medium">{job.attempts}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase">Updated</p>
+            <p className="text-xs text-text-muted uppercase">Updated</p>
             <p className="text-sm font-medium">{new Date(job.updated_at).toLocaleString()}</p>
           </div>
         </div>
       </div>
 
       {result && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Execution Result</h3>
+        <div className="glass rounded-xl glow-border p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-text-primary">Execution Result</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <p className="text-xs text-gray-500 uppercase">Backend</p>
+              <p className="text-xs text-text-muted uppercase">Backend</p>
               <p className="text-sm font-medium">{result.backend}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Shots</p>
+              <p className="text-xs text-text-muted uppercase">Shots</p>
               <p className="text-sm font-medium">{result.shots}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Duration</p>
+              <p className="text-xs text-text-muted uppercase">Duration</p>
               <p className="text-sm font-medium">{result.duration_ms} ms</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Completed</p>
+              <p className="text-xs text-text-muted uppercase">Completed</p>
               <p className="text-sm font-medium">{new Date(result.completed_at).toLocaleString()}</p>
             </div>
           </div>
@@ -100,8 +100,8 @@ export default function RunDetailsPage() {
       )}
 
       {!result && job.status !== 'succeeded' && job.status !== 'failed' && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-yellow-800 text-sm">
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+          <p className="text-amber-400 text-sm">
             ⏳ Job is {job.status}. Results will appear automatically when execution completes.
           </p>
         </div>

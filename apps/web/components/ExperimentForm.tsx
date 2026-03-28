@@ -46,39 +46,39 @@ export default function ExperimentForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Experiment Name</label>
+        <label className="block text-sm font-medium text-text-secondary mb-1">Experiment Name</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="input-field"
           placeholder="my-experiment"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-text-secondary mb-1">Description</label>
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="input-field"
           placeholder="Optional description"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Provider</label>
+          <label className="block text-sm font-medium text-text-secondary mb-1">Provider</label>
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value as Provider)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="input-field"
           >
             {PROVIDERS.map((p) => (
               <option key={p.value} value={p.value}>
@@ -89,25 +89,25 @@ export default function ExperimentForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Shots</label>
+          <label className="block text-sm font-medium text-text-secondary mb-1">Shots</label>
           <input
             type="number"
             min={1}
             max={10000}
             value={shots}
             onChange={(e) => setShots(Number(e.target.value))}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="input-field"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">QASM Circuit</label>
+        <label className="block text-sm font-medium text-text-secondary mb-1">QASM Circuit</label>
         <textarea
           rows={8}
           value={qasm}
           onChange={(e) => setQasm(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="input-field font-mono"
           placeholder="OPENQASM 2.0; ..."
         />
       </div>
@@ -115,7 +115,7 @@ export default function ExperimentForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="bg-indigo-600 text-white px-6 py-2.5 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="btn-primary"
       >
         {submitting ? 'Submitting…' : 'Submit Experiment'}
       </button>

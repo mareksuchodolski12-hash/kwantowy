@@ -48,54 +48,54 @@ export default function ExperimentDetailPage() {
   }, [job, fetchData]);
 
   if (loading) {
-    return <p className="text-gray-500 py-8 text-center">Loading experiment…</p>;
+    return <p className="text-text-muted py-8 text-center">Loading experiment…</p>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link href="/experiments" className="text-sm text-indigo-600 hover:underline">
+          <Link href="/experiments" className="text-sm text-accent hover:underline">
             ← Back to Experiments
           </Link>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">
+          <h2 className="text-2xl font-bold text-text-primary mt-1">
             {experiment?.name ?? 'Experiment'}
           </h2>
           {experiment?.description && (
-            <p className="text-sm text-gray-500 mt-1">{experiment.description}</p>
+            <p className="text-sm text-text-muted mt-1">{experiment.description}</p>
           )}
         </div>
         {job && <StatusBadge status={job.status} />}
       </div>
 
       {experiment && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Experiment Details</h3>
+        <div className="glass rounded-xl glow-border p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-text-primary">Experiment Details</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-xs text-gray-500 uppercase">Shots</p>
+              <p className="text-xs text-text-muted uppercase">Shots</p>
               <p className="text-sm font-medium">{experiment.circuit.shots}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Created</p>
+              <p className="text-xs text-text-muted uppercase">Created</p>
               <p className="text-sm font-medium">{new Date(experiment.created_at).toLocaleString()}</p>
             </div>
             {job && (
               <>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase">Provider</p>
+                  <p className="text-xs text-text-muted uppercase">Provider</p>
                   <ProviderBadge provider={job.provider} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase">Attempts</p>
+                  <p className="text-xs text-text-muted uppercase">Attempts</p>
                   <p className="text-sm font-medium">{job.attempts}</p>
                 </div>
               </>
             )}
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase mb-1">QASM Circuit</p>
-            <pre className="bg-gray-50 border border-gray-200 rounded-md p-3 text-xs font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap">
+            <p className="text-xs text-text-muted uppercase mb-1">QASM Circuit</p>
+            <pre className="bg-abyss border border-muted/40 rounded-lg p-3 text-xs font-mono text-text-secondary overflow-x-auto whitespace-pre-wrap">
               {experiment.circuit.qasm}
             </pre>
           </div>
@@ -103,23 +103,23 @@ export default function ExperimentDetailPage() {
       )}
 
       {job && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">Job Status</h3>
+        <div className="glass rounded-xl glow-border p-6">
+          <h3 className="text-lg font-semibold text-text-primary mb-3">Job Status</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-xs text-gray-500 uppercase">Status</p>
+              <p className="text-xs text-text-muted uppercase">Status</p>
               <StatusBadge status={job.status} />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Provider</p>
+              <p className="text-xs text-text-muted uppercase">Provider</p>
               <ProviderBadge provider={job.provider} />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Correlation ID</p>
-              <p className="text-sm font-medium text-gray-600 truncate">{job.correlation_id}</p>
+              <p className="text-xs text-text-muted uppercase">Correlation ID</p>
+              <p className="text-sm font-medium text-text-secondary truncate">{job.correlation_id}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Updated</p>
+              <p className="text-xs text-text-muted uppercase">Updated</p>
               <p className="text-sm font-medium">{new Date(job.updated_at).toLocaleString()}</p>
             </div>
           </div>
@@ -127,23 +127,23 @@ export default function ExperimentDetailPage() {
       )}
 
       {result && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Execution Result</h3>
+        <div className="glass rounded-xl glow-border p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-text-primary">Execution Result</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <p className="text-xs text-gray-500 uppercase">Backend</p>
+              <p className="text-xs text-text-muted uppercase">Backend</p>
               <p className="text-sm font-medium">{result.backend}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Shots</p>
+              <p className="text-xs text-text-muted uppercase">Shots</p>
               <p className="text-sm font-medium">{result.shots}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Duration</p>
+              <p className="text-xs text-text-muted uppercase">Duration</p>
               <p className="text-sm font-medium">{result.duration_ms} ms</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Completed</p>
+              <p className="text-xs text-text-muted uppercase">Completed</p>
               <p className="text-sm font-medium">{new Date(result.completed_at).toLocaleString()}</p>
             </div>
           </div>
@@ -152,8 +152,8 @@ export default function ExperimentDetailPage() {
       )}
 
       {job && !result && job.status !== 'succeeded' && job.status !== 'failed' && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-yellow-800 text-sm">
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+          <p className="text-amber-400 text-sm">
             Job is {job.status}. Results will appear automatically when execution completes.
           </p>
         </div>

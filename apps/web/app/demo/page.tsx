@@ -89,15 +89,15 @@ export default function DemoPage() {
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Interactive Demo</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-2xl font-bold text-text-primary">Interactive Demo</h2>
+        <p className="text-sm text-text-muted mt-1">
           Run a quantum circuit with one click and see the results.
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+      <div className="glass rounded-xl glow-border p-6 space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Circuit</label>
+          <label className="block text-sm font-medium text-text-secondary mb-2">Select Circuit</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {CIRCUITS.map((c, idx) => (
               <button
@@ -105,8 +105,8 @@ export default function DemoPage() {
                 onClick={() => { setSelected(idx); setCounts(null); setJobInfo(null); }}
                 className={`p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                   selected === idx
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                    ? 'border-accent/40 bg-accent/10 text-accent'
+                    : 'border-muted/40 hover:border-muted/60 text-text-secondary'
                 }`}
               >
                 {c.label}
@@ -116,8 +116,8 @@ export default function DemoPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">QASM</label>
-          <pre className="bg-gray-50 border rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap">
+          <label className="block text-sm font-medium text-text-secondary mb-1">QASM</label>
+          <pre className="bg-abyss border border-muted/40 rounded-lg p-3 text-xs font-mono text-accent/70 overflow-x-auto whitespace-pre-wrap">
             {CIRCUITS[selected].qasm}
           </pre>
         </div>
@@ -125,17 +125,17 @@ export default function DemoPage() {
         <button
           onClick={handleRun}
           disabled={running}
-          className="w-full bg-indigo-600 text-white px-6 py-3 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full btn-primary py-3"
         >
           {running ? 'Running…' : `Run ${CIRCUITS[selected].label}`}
         </button>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded text-sm">{error}</div>
         )}
 
         {jobInfo && (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-text-secondary">
             Job <span className="font-mono">{jobInfo.id.slice(0, 8)}</span> — Status:{' '}
             <span className="font-semibold">{jobInfo.status}</span>
           </div>

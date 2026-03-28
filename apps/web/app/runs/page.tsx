@@ -10,25 +10,25 @@ export default async function RunsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Run History</h2>
-        <p className="text-sm text-gray-500 mt-1">All quantum job executions</p>
+        <h2 className="text-2xl font-bold text-text-primary">Run History</h2>
+        <p className="text-sm text-text-muted mt-1">All quantum job executions</p>
       </div>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="glass rounded-xl glow-border overflow-x-auto">
+        <table className="min-w-full divide-y divide-muted/40">
+          <thead className="bg-panel/50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attempts</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Updated</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Job</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Provider</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Attempts</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Updated</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-muted/20">
             {jobs.map((job) => (
-              <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={job.id} className="hover:bg-accent/[0.03] transition-colors">
                 <td className="px-4 py-3 text-sm">
-                  <Link href={`/runs/${job.id}`} className="text-indigo-600 hover:underline font-medium">
+                  <Link href={`/runs/${job.id}`} className="text-accent hover:underline font-medium">
                     {job.id.slice(0, 8)}
                   </Link>
                 </td>
@@ -38,8 +38,8 @@ export default async function RunsPage() {
                 <td className="px-4 py-3 text-sm">
                   <StatusBadge status={job.status} />
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700">{job.attempts}</td>
-                <td className="px-4 py-3 text-sm text-gray-500">{new Date(job.updated_at).toLocaleString()}</td>
+                <td className="px-4 py-3 text-sm text-text-secondary">{job.attempts}</td>
+                <td className="px-4 py-3 text-sm text-text-muted">{new Date(job.updated_at).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>

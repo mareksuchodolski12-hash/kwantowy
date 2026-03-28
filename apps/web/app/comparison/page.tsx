@@ -74,35 +74,35 @@ export default function ComparisonPage() {
   };
 
   if (loading) {
-    return <p className="text-gray-500 py-8 text-center">Loading comparison data…</p>;
+    return <p className="text-text-muted py-8 text-center">Loading comparison data…</p>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Result Comparison</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-2xl font-bold text-text-primary">Result Comparison</h2>
+        <p className="text-sm text-text-muted mt-1">
           Select experiments to compare their results across providers
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="glass rounded-xl glow-border overflow-x-auto">
+        <table className="min-w-full divide-y divide-muted/40">
+          <thead className="bg-panel/50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Select</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Experiment</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Backend</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration (ms)</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shots</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Select</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Experiment</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Provider</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Backend</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Duration (ms)</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase">Shots</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-muted/20">
             {rows.map(({ job, result, experimentName, selected: sel }) => (
               <tr
                 key={job.id}
-                className={`cursor-pointer transition-colors ${sel ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
+                className={`cursor-pointer transition-colors ${sel ? 'bg-plasma/[0.08]' : 'hover:bg-accent/[0.03]'}`}
                 onClick={() => toggleRow(job.id)}
               >
                 <td className="px-4 py-3">
@@ -110,21 +110,21 @@ export default function ComparisonPage() {
                     type="checkbox"
                     checked={sel}
                     readOnly
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
+                    className="rounded border-muted/40 text-accent focus:ring-accent/20 pointer-events-none"
                   />
                 </td>
-                <td className="px-4 py-3 text-sm font-medium text-gray-900">{experimentName}</td>
+                <td className="px-4 py-3 text-sm font-medium text-text-primary">{experimentName}</td>
                 <td className="px-4 py-3 text-sm">
                   <ProviderBadge provider={job.provider} />
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700">{result.backend}</td>
-                <td className="px-4 py-3 text-sm text-gray-700">{result.duration_ms}</td>
-                <td className="px-4 py-3 text-sm text-gray-700">{result.shots}</td>
+                <td className="px-4 py-3 text-sm text-text-secondary">{result.backend}</td>
+                <td className="px-4 py-3 text-sm text-text-secondary">{result.duration_ms}</td>
+                <td className="px-4 py-3 text-sm text-text-secondary">{result.shots}</td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
                   No succeeded runs available for comparison.
                 </td>
               </tr>
@@ -136,14 +136,14 @@ export default function ComparisonPage() {
       {selected.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-lg font-semibold text-text-primary">
               Comparing {selected.length} result{selected.length > 1 ? 's' : ''}
             </h3>
             {selected.length >= 2 && (
               <button
                 onClick={handleCompare}
                 disabled={comparing}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="btn-plasma"
               >
                 {comparing ? 'Comparing…' : 'Run Statistical Comparison'}
               </button>
@@ -151,15 +151,15 @@ export default function ComparisonPage() {
           </div>
 
           {comparison && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-3">
-              <h4 className="text-sm font-semibold text-gray-800">Statistical Summary</h4>
+            <div className="glass rounded-xl glow-border p-5 space-y-3">
+              <h4 className="text-sm font-semibold text-text-primary">Statistical Summary</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 {Object.keys(comparison.fidelity_scores).length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase mb-1">Fidelity Scores</p>
+                    <p className="text-xs text-text-muted uppercase mb-1">Fidelity Scores</p>
                     {Object.entries(comparison.fidelity_scores).map(([provider, score]) => (
                       <div key={provider} className="flex justify-between">
-                        <span className="text-gray-700">{provider}</span>
+                        <span className="text-text-secondary">{provider}</span>
                         <span className="font-medium">{(score * 100).toFixed(1)}%</span>
                       </div>
                     ))}
@@ -167,39 +167,39 @@ export default function ComparisonPage() {
                 )}
                 {Object.keys(comparison.distribution_distances).length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase mb-1">Distribution Distances (KL)</p>
+                    <p className="text-xs text-text-muted uppercase mb-1">Distribution Distances (KL)</p>
                     {Object.entries(comparison.distribution_distances).map(([provider, dist]) => (
                       <div key={provider} className="flex justify-between">
-                        <span className="text-gray-700">{provider}</span>
+                        <span className="text-text-secondary">{provider}</span>
                         <span className="font-medium">{dist.toFixed(4)}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-text-muted">
                 Total duration: {comparison.total_duration_ms} ms
               </p>
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {selected.map(({ job, result, experimentName }) => (
-              <div key={job.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-3">
+              <div key={job.id} className="glass rounded-xl glow-border p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-800">{experimentName}</span>
+                  <span className="text-sm font-medium text-text-primary">{experimentName}</span>
                   <ProviderBadge provider={job.provider} />
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <div>
-                    <p className="text-xs text-gray-500">Duration</p>
+                    <p className="text-xs text-text-muted">Duration</p>
                     <p className="font-medium">{result.duration_ms} ms</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Shots</p>
+                    <p className="text-xs text-text-muted">Shots</p>
                     <p className="font-medium">{result.shots}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Backend</p>
+                    <p className="text-xs text-text-muted">Backend</p>
                     <p className="font-medium">{result.backend}</p>
                   </div>
                 </div>
