@@ -56,6 +56,25 @@ class ApiKeyRepository:
         await self.session.flush()
         return True
 
+    async def ensure_raw_key(self, raw: str, name: str) -> ApiKeyModel:
+        """Ensure a specific raw key exists in the database. Idempotent."""
+        key_hash = _hash_key(raw)
+        existing = await self.session.scalar(
+            select(ApiKeyModel).where(ApiKeyModel.key_hash == key_hash)
+        )
+        if existing:
+            return existing
+        now = datetime.now(UTC)
+        model = ApiKeyModel(
+            key_hash=key_hash,
+            name=name,
+            is_active=True,
+            created_at=now,
+        )
+        self.session.add(model)
+        await self.session.flush()
+        return model
+
     async def list(self) -> list[ApiKeyModel]:
         rows = await self.session.scalars(select(ApiKeyModel).order_by(ApiKeyModel.created_at.desc()))
         return list(rows)

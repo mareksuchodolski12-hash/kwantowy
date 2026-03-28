@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.correlation import CorrelationIdMiddleware
 from app.core.logging import configure_logging
 from app.core.observability import MetricsMiddleware, configure_tracing, instrument_fastapi
+from app.core.rate_limit import RateLimitMiddleware
 
 configure_logging()
 configure_tracing()
@@ -30,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(CorrelationIdMiddleware)
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(MetricsMiddleware)
 app.include_router(router)
 instrument_fastapi(app)

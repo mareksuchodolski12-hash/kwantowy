@@ -48,12 +48,16 @@ class JobRepository:
         model = await self.session.scalar(select(JobModel).where(JobModel.idempotency_key == key))
         return self._to_contract(model) if model else None
 
-    async def list(self, limit: int = 100) -> list[Job]:
-        rows = await self.session.scalars(select(JobModel).order_by(JobModel.created_at.desc()).limit(limit))
+    async def list(self, limit: int = 50, offset: int = 0) -> list[Job]:
+        rows = await self.session.scalars(
+            select(JobModel).order_by(JobModel.created_at.desc()).offset(offset).limit(limit)
+        )
         return [self._to_contract(m) for m in rows]
 
     async def transition(self, job_id: UUID, next_state: JobState) -> Job:
-        model = await self.session.scalar(select(JobModel).where(JobModel.id == job_id))
+        model = await self.session.scalar(
+            select(JobModel).where(JobModel.id == job_id).with_for_update()
+        )
         if model is None:
             raise ValueError("job not found")
         ensure_transition(JobState(model.status), next_state)
@@ -67,7 +71,9 @@ class JobRepository:
         return self._to_contract(model)
 
     async def increment_attempt(self, job_id: UUID) -> Job:
-        model = await self.session.scalar(select(JobModel).where(JobModel.id == job_id))
+        model = await self.session.scalar(
+            select(JobModel).where(JobModel.id == job_id).with_for_update()
+        )
         if model is None:
             raise ValueError("job not found")
         model.attempts += 1
@@ -76,7 +82,9 @@ class JobRepository:
         return self._to_contract(model)
 
     async def set_remote_run_id(self, job_id: UUID, remote_run_id: str) -> None:
-        model = await self.session.scalar(select(JobModel).where(JobModel.id == job_id))
+        model = await self.session.scalar(
+            select(JobModel).where(JobModel.id == job_id).with_for_update()
+        )
         if model is None:
             raise ValueError("job not found")
         model.remote_run_id = remote_run_id

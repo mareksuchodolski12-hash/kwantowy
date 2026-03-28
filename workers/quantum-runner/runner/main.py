@@ -64,6 +64,19 @@ async def recover_stuck_jobs(session_factory: async_sessionmaker, queue: RedisQu
     if requeued:
         logger.info("Re-enqueued %d timed-out messages from processing set", requeued)
 
+    # Recover jobs stuck in QUEUED state (committed to DB but never enqueued,
+    # e.g. process crashed between session.commit() and queue.enqueue_job()).
+    async with session_factory() as session:
+        orphaned_rows = await session.scalars(
+            select(JobModel).where(
+                JobModel.status == "queued",
+                JobModel.updated_at < cutoff,
+            )
+        )
+        for job in list(orphaned_rows):
+            logger.warning("Re-enqueuing orphaned QUEUED job %s", job.id)
+            await queue.enqueue_job(job.id, job.correlation_id)
+
 
 async def run() -> None:
     signal.signal(signal.SIGINT, _handle_signal)

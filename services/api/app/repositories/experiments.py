@@ -36,9 +36,9 @@ class ExperimentRepository:
             return None
         return self._to_contract(model)
 
-    async def list(self, limit: int = 100) -> list[Experiment]:
+    async def list(self, limit: int = 50, offset: int = 0) -> list[Experiment]:
         rows = await self.session.scalars(
-            select(ExperimentModel).order_by(ExperimentModel.created_at.desc()).limit(limit)
+            select(ExperimentModel).order_by(ExperimentModel.created_at.desc()).offset(offset).limit(limit)
         )
         return [self._to_contract(m) for m in rows]
 

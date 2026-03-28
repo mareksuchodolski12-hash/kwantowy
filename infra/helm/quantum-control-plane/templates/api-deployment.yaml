@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/name: qcp-api
     app.kubernetes.io/part-of: quantum-control-plane
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicas.api | default 1 }}
   selector:
     matchLabels:
       app: qcp-api
@@ -27,9 +27,19 @@ spec:
             - containerPort: 8000
           env:
             - name: QCP_DATABASE_URL
-              value: {{ .Values.env.databaseUrl | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: qcp-secrets
+                  key: database-url
             - name: QCP_REDIS_URL
-              value: {{ .Values.env.redisUrl | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: qcp-secrets
+                  key: redis-url
+            - name: QCP_ENVIRONMENT
+              value: {{ .Values.env.environment | default "production" | quote }}
+            - name: QCP_LOG_LEVEL
+              value: {{ .Values.env.logLevel | default "INFO" | quote }}
           resources:
             requests:
               cpu: {{ .Values.resources.api.requests.cpu | quote }}

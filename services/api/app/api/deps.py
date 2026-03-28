@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 
 from fastapi import Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader
-from redis.asyncio import Redis
+from redis.asyncio import ConnectionPool, Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -11,6 +11,8 @@ from app.repositories.api_keys import ApiKeyRepository
 
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
+_redis_pool = ConnectionPool.from_url(settings.redis_url, max_connections=20)
+
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async for session in get_db_session():
@@ -18,11 +20,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_redis() -> AsyncGenerator[Redis, None]:
-    redis = Redis.from_url(settings.redis_url)
-    try:
-        yield redis
-    finally:
-        await redis.close()
+    yield Redis(connection_pool=_redis_pool)
 
 
 async def require_api_key(

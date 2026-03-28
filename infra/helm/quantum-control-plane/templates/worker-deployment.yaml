@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/name: qcp-worker
     app.kubernetes.io/part-of: quantum-control-plane
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicas.worker | default 1 }}
   selector:
     matchLabels:
       app: qcp-worker
@@ -25,9 +25,15 @@ spec:
           image: {{ .Values.image.worker | quote }}
           env:
             - name: QCP_DATABASE_URL
-              value: {{ .Values.env.databaseUrl | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: qcp-secrets
+                  key: database-url
             - name: QCP_REDIS_URL
-              value: {{ .Values.env.redisUrl | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: qcp-secrets
+                  key: redis-url
           resources:
             requests:
               cpu: {{ .Values.resources.worker.requests.cpu | quote }}

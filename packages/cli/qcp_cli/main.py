@@ -85,15 +85,10 @@ def experiment_run(file: str, provider: str, shots: int, name: str | None, wait:
 @experiment.command("list")
 def experiment_list() -> None:
     """List all experiments."""
-    import httpx
+    from quantum_sdk import QCPClient
 
-    resp = httpx.get(
-        f"{get_base_url()}/v1/experiments",
-        headers={"X-API-Key": get_api_key()},
-        timeout=30.0,
-    )
-    resp.raise_for_status()
-    experiments = resp.json().get("experiments", [])
+    client = QCPClient(api_key=get_api_key(), base_url=get_base_url())
+    experiments = client.list_experiments()
 
     table = Table(title="Experiments")
     table.add_column("ID", style="cyan", no_wrap=True)
@@ -171,6 +166,76 @@ def result_show(job_id: str) -> None:
     counts = result_data.get("counts", {})
     for state, count in sorted(counts.items()):
         console.print(f"  |{state}⟩  {count}")
+
+
+@result.command("compare")
+@click.argument("job_ids", nargs=-1, required=True)
+@click.option("--name", default="cli-comparison", help="Experiment name for comparison")
+def result_compare(job_ids: tuple[str, ...], name: str) -> None:
+    """Compare results of two or more completed jobs."""
+    from quantum_sdk import QCPClient
+
+    if len(job_ids) < 2:
+        console.print("[red]Provide at least 2 job IDs to compare.[/red]")
+        sys.exit(1)
+
+    client = QCPClient(api_key=get_api_key(), base_url=get_base_url())
+    resp = client.compare_results(experiment_name=name, job_ids=list(job_ids))
+    comparison = resp.get("comparison", resp)
+
+    console.print(f"[bold]Comparison: {comparison.get('experiment_name', name)}[/bold]")
+    console.print(f"  Total duration: {comparison.get('total_duration_ms', 'N/A')} ms\n")
+
+    fidelity = comparison.get("fidelity_scores", {})
+    if fidelity:
+        console.print("[bold]Fidelity Scores:[/bold]")
+        for provider, score in fidelity.items():
+            console.print(f"  {provider}: {score * 100:.1f}%")
+
+    distances = comparison.get("distribution_distances", {})
+    if distances:
+        console.print("\n[bold]Distribution Distances (KL):[/bold]")
+        for provider, dist in distances.items():
+            console.print(f"  {provider}: {dist:.4f}")
+
+
+# ---------------------------------------------------------------------------
+# Provider commands
+# ---------------------------------------------------------------------------
+
+
+@cli.group("providers")
+def providers_group() -> None:
+    """Browse quantum execution providers."""
+
+
+@providers_group.command("list")
+def providers_list() -> None:
+    """List all available quantum execution providers."""
+    from quantum_sdk import QCPClient
+
+    client = QCPClient(api_key=get_api_key(), base_url=get_base_url())
+    providers = client.list_providers()
+
+    table = Table(title="Providers")
+    table.add_column("Provider", style="bold")
+    table.add_column("Type")
+    table.add_column("Qubits", justify="right")
+    table.add_column("Fidelity", justify="right")
+    table.add_column("Queue (s)", justify="right")
+    table.add_column("Cost/shot ($)", justify="right")
+
+    for p in providers:
+        table.add_row(
+            p.get("provider", "?"),
+            "Sim" if p.get("is_simulator") else "Hardware",
+            str(p.get("max_qubits", "?")),
+            f"{p.get('estimated_fidelity', 0) * 100:.1f}%",
+            str(p.get("avg_queue_time_seconds", "?")),
+            f"{p.get('estimated_cost_per_shot_usd', 0):.6f}",
+        )
+
+    console.print(table)
 
 
 def main() -> None:

@@ -1,8 +1,17 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? '';
+// In production, requests go through the server-side proxy (/api/qcp/) which
+// injects the API key server-side.  The NEXT_PUBLIC_API_KEY fallback only
+// applies during local development when hitting the backend directly.
+const IS_SERVER = typeof window === 'undefined';
+const DIRECT_URL = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const BASE_URL = IS_SERVER ? DIRECT_URL : '/api/qcp';
+const SERVER_API_KEY = process.env.QCP_API_KEY ?? process.env.NEXT_PUBLIC_API_KEY ?? '';
 
 function authHeaders(): HeadersInit {
-  return API_KEY ? { 'X-API-Key': API_KEY } : {};
+  // On the server (SSR), attach key directly; on the client, the proxy handles it.
+  if (IS_SERVER && SERVER_API_KEY) {
+    return { 'X-API-Key': SERVER_API_KEY };
+  }
+  return {};
 }
 
 export type Provider = 'local_simulator' | 'ibm_runtime' | 'ionq' | 'rigetti' | 'simulator_aer';
@@ -122,5 +131,37 @@ export async function listProviders(): Promise<ProviderCapabilities[]> {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('list providers failed');
+  return res.json();
+}
+
+export interface ResultComparison {
+  experiment_name: string;
+  results: ExecutionResult[];
+  fidelity_scores: Record<string, number>;
+  distribution_distances: Record<string, number>;
+  total_duration_ms: number;
+}
+
+export async function compareResults(
+  experimentName: string,
+  jobIds: string[],
+  referenceDistribution?: Record<string, number>,
+): Promise<{ comparison: ResultComparison }> {
+  const body: Record<string, unknown> = {
+    experiment_name: experimentName,
+    job_ids: jobIds,
+  };
+  if (referenceDistribution) {
+    body.reference_distribution = referenceDistribution;
+  }
+  const res = await fetch(`${BASE_URL}/v1/results/compare`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `compare failed (${res.status})`);
+  }
   return res.json();
 }

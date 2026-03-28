@@ -2,7 +2,7 @@ import logging
 from typing import Any, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from quantum_contracts import (
     Experiment,
     Job,
@@ -171,6 +171,8 @@ async def _submit(
     "/v1/jobs",
     response_model=SubmitExperimentResponse,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
+    deprecated=True,
 )
 async def submit_job(
     body: SubmitExperimentRequest,
@@ -178,6 +180,7 @@ async def submit_job(
     session: AsyncSession = Depends(get_session),
     redis: Redis = Depends(get_redis),
 ) -> SubmitExperimentResponse:
+    """Deprecated: use POST /v1/experiments instead."""
     return await _submit(body, idempotency_key, session, redis)
 
 
@@ -203,12 +206,14 @@ async def create_experiment(
     dependencies=[Depends(require_api_key)],
 )
 async def list_experiments(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     session: AsyncSession = Depends(get_session),
     redis: Redis = Depends(get_redis),
 ) -> ExperimentListResponse:
-    """List all experiments."""
+    """List experiments with pagination."""
     service = JobService(session, RedisQueue(redis))
-    return ExperimentListResponse(experiments=await service.list_experiments())
+    return ExperimentListResponse(experiments=await service.list_experiments(limit=limit, offset=offset))
 
 
 @router.get(
@@ -246,11 +251,13 @@ async def get_job(
 
 @router.get("/v1/jobs", response_model=JobListResponse, dependencies=[Depends(require_api_key)])
 async def list_jobs(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     session: AsyncSession = Depends(get_session),
     redis: Redis = Depends(get_redis),
 ) -> JobListResponse:
     service = JobService(session, RedisQueue(redis))
-    return JobListResponse(jobs=await service.list_jobs())
+    return JobListResponse(jobs=await service.list_jobs(limit=limit, offset=offset))
 
 
 async def _get_result(
@@ -526,6 +533,7 @@ async def compare_results_endpoint(
     response_model=BudgetResponse,
     status_code=201,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def create_budget(
     body: CreateBudgetRequest,
@@ -547,6 +555,7 @@ async def create_budget(
     "/v1/budgets",
     response_model=BudgetListResponse,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def list_budgets(
     session: AsyncSession = Depends(get_session),
@@ -567,6 +576,7 @@ async def list_budgets(
     response_model=OrgResponse,
     status_code=201,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def create_org(
     body: CreateOrgRequest,
@@ -583,6 +593,7 @@ async def create_org(
     "/v1/orgs",
     response_model=OrgListResponse,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def list_orgs(
     session: AsyncSession = Depends(get_session),
@@ -598,6 +609,7 @@ async def list_orgs(
     response_model=TeamResponse,
     status_code=201,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def create_team(
     org_id: UUID,
@@ -615,6 +627,7 @@ async def create_team(
     "/v1/orgs/{org_id}/teams",
     response_model=TeamListResponse,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def list_teams(
     org_id: UUID,
@@ -631,6 +644,7 @@ async def list_teams(
     response_model=ProjectResponse,
     status_code=201,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def create_project(
     team_id: UUID,
@@ -648,6 +662,7 @@ async def create_project(
     "/v1/teams/{team_id}/projects",
     response_model=ProjectListResponse,
     dependencies=[Depends(require_api_key)],
+    include_in_schema=False,
 )
 async def list_projects(
     team_id: UUID,

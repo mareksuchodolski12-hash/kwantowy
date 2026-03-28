@@ -32,14 +32,16 @@ services:
     environment:
       QCP_DATABASE_URL: ${QCP_DATABASE_URL:-postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane}
       QCP_REDIS_URL: ${QCP_REDIS_URL:-redis://redis:6379/0}
-      QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
+      QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-dev}
       QCP_LOG_LEVEL: ${QCP_LOG_LEVEL:-INFO}
+      QCP_CORS_ORIGINS: ${QCP_CORS_ORIGINS:-http://localhost:3000}
       QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
       QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
       QCP_IBM_RUNTIME_CHANNEL: ${QCP_IBM_RUNTIME_CHANNEL:-ibm_quantum}
       QCP_IBM_RUNTIME_INSTANCE: ${QCP_IBM_RUNTIME_INSTANCE:-}
       QCP_IBM_RUNTIME_BACKEND: ${QCP_IBM_RUNTIME_BACKEND:-ibmq_qasm_simulator}
       QCP_OTEL_EXPORTER_OTLP_ENDPOINT: ${QCP_OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      QCP_API_KEY: ${QCP_API_KEY:-qcp_dev_default_key}
     ports: ["8000:8000"]
     depends_on:
       postgres:
@@ -51,8 +53,8 @@ services:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')\""]
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      start_period: 30s
 
   worker:
     build:
@@ -61,7 +63,7 @@ services:
     environment:
       QCP_DATABASE_URL: ${QCP_DATABASE_URL:-postgresql+asyncpg://quantum:quantum@postgres:5432/quantum_control_plane}
       QCP_REDIS_URL: ${QCP_REDIS_URL:-redis://redis:6379/0}
-      QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-production}
+      QCP_ENVIRONMENT: ${QCP_ENVIRONMENT:-dev}
       QCP_LOG_LEVEL: ${QCP_LOG_LEVEL:-INFO}
       QCP_IBM_RUNTIME_ENABLED: ${QCP_IBM_RUNTIME_ENABLED:-false}
       QCP_IBM_RUNTIME_TOKEN: ${QCP_IBM_RUNTIME_TOKEN:-}
@@ -70,17 +72,11 @@ services:
       QCP_IBM_RUNTIME_BACKEND: ${QCP_IBM_RUNTIME_BACKEND:-ibmq_qasm_simulator}
       QCP_STUCK_JOB_TIMEOUT_SECONDS: ${QCP_STUCK_JOB_TIMEOUT_SECONDS:-120}
     depends_on:
-      postgres:
+      api:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import os, signal; os.kill(1, 0)"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   web:
     build:
@@ -88,14 +84,18 @@ services:
       dockerfile: apps/web/Dockerfile
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-      NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:8000}
+      QCP_API_KEY: ${QCP_API_KEY:-qcp_dev_default_key}
     ports: ["3000:3000"]
-    depends_on: [api]
+    depends_on:
+      api:
+        condition: service_healthy
 
   prometheus:
     image: prom/prometheus:v2.54.1
     volumes:
       - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
     ports: ["9090:9090"]
     depends_on: [api]
     restart: unless-stopped

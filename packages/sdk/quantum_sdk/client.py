@@ -156,3 +156,141 @@ class QCPClient:
                 raise RuntimeError(f"Job {job_id} failed after {job.get('attempts')} attempts")
             time.sleep(poll_interval)
         raise TimeoutError(f"Job {job_id} did not complete within {max_wait}s")
+
+    # ------------------------------------------------------------------
+    # Providers
+    # ------------------------------------------------------------------
+
+    def list_providers(self) -> list[dict[str, Any]]:
+        """List all registered quantum execution providers with capabilities."""
+        resp = httpx.get(
+            f"{self._base}/v1/providers",
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]
+
+    def select_provider(
+        self,
+        qubit_count: int,
+        circuit_depth: int,
+        priority: str = "fidelity",
+    ) -> dict[str, Any]:
+        """Select the best provider for given circuit requirements."""
+        resp = httpx.post(
+            f"{self._base}/v1/providers/select",
+            json={
+                "qubit_count": qubit_count,
+                "circuit_depth": circuit_depth,
+                "priority": priority,
+            },
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]
+
+    # ------------------------------------------------------------------
+    # Circuit Optimisation
+    # ------------------------------------------------------------------
+
+    def optimise_circuit(
+        self,
+        qasm: str,
+        strategy: str = "light",
+    ) -> dict[str, Any]:
+        """Optimise a quantum circuit before execution."""
+        resp = httpx.post(
+            f"{self._base}/v1/circuits/optimise",
+            json={
+                "circuit": {"qasm": qasm},
+                "config": {"strategy": strategy},
+            },
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]
+
+    # ------------------------------------------------------------------
+    # Benchmarks
+    # ------------------------------------------------------------------
+
+    def list_benchmarks(self) -> list[dict[str, Any]]:
+        """Return the latest benchmark for every provider."""
+        resp = httpx.get(
+            f"{self._base}/v1/benchmarks",
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json().get("benchmarks", [])  # type: ignore[no-any-return]
+
+    # ------------------------------------------------------------------
+    # Result Comparison
+    # ------------------------------------------------------------------
+
+    def compare_results(
+        self,
+        experiment_name: str,
+        job_ids: list[str],
+        reference_distribution: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
+        """Compare execution results across providers."""
+        payload: dict[str, Any] = {
+            "experiment_name": experiment_name,
+            "job_ids": job_ids,
+        }
+        if reference_distribution is not None:
+            payload["reference_distribution"] = reference_distribution
+        resp = httpx.post(
+            f"{self._base}/v1/results/compare",
+            json=payload,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]
+
+    # ------------------------------------------------------------------
+    # Experiment Versioning
+    # ------------------------------------------------------------------
+
+    def create_experiment_version(
+        self,
+        experiment_id: str,
+        circuit_qasm: str,
+        provider: str | None = None,
+        optimisation_params: dict[str, Any] | None = None,
+        seed: int | None = None,
+        parent_version_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a new version for an experiment."""
+        payload: dict[str, Any] = {"circuit_qasm": circuit_qasm}
+        if provider is not None:
+            payload["provider"] = provider
+        if optimisation_params is not None:
+            payload["optimisation_params"] = optimisation_params
+        if seed is not None:
+            payload["seed"] = seed
+        if parent_version_id is not None:
+            payload["parent_version_id"] = parent_version_id
+        resp = httpx.post(
+            f"{self._base}/v1/experiments/{experiment_id}/versions",
+            json=payload,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]
+
+    def list_experiment_versions(self, experiment_id: str) -> list[dict[str, Any]]:
+        """List all versions of an experiment."""
+        resp = httpx.get(
+            f"{self._base}/v1/experiments/{experiment_id}/versions",
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json().get("versions", [])  # type: ignore[no-any-return]

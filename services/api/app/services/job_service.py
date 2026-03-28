@@ -77,11 +77,11 @@ class JobService:
     async def get_job(self, job_id: UUID) -> Job | None:
         return await self.jobs.get(job_id)
 
-    async def list_jobs(self) -> list[Job]:
-        return await self.jobs.list()
+    async def list_jobs(self, limit: int = 50, offset: int = 0) -> list[Job]:
+        return await self.jobs.list(limit=limit, offset=offset)
 
-    async def list_experiments(self) -> list[Experiment]:
-        return await self.experiments.list()
+    async def list_experiments(self, limit: int = 50, offset: int = 0) -> list[Experiment]:
+        return await self.experiments.list(limit=limit, offset=offset)
 
     async def get_experiment(self, experiment_id: UUID) -> Experiment | None:
         return await self.experiments.get(experiment_id)

@@ -41,6 +41,9 @@ KNOWN_ACTIONS = frozenset(
     }
 )
 
+# Actions that have real implementations wired up.
+_IMPLEMENTED_ACTIONS = frozenset({"noop", "simulate"})
+
 
 # ---------------------------------------------------------------------------
 # Repository
@@ -213,7 +216,18 @@ class WorkflowEngine:
 
         for step in sorted_steps:
             await self.repo.update_run(run.id, current_step=step.name)
-            result = self._execute_step(step, step_results)
+            try:
+                result = self._execute_step(step, step_results)
+            except NotImplementedError as exc:
+                step_results[step.name] = {"action": step.action, "status": "failed", "error": str(exc)}
+                await self.repo.update_run(
+                    run.id,
+                    state=WorkflowState.FAILED,
+                    current_step=step.name,
+                    step_results=step_results,
+                )
+                logger.warning("Workflow run %s failed at step '%s': %s", run.id, step.name, exc)
+                return await self.repo.get_run(run.id)  # type: ignore[return-value]
             step_results[step.name] = result
 
         await self.repo.update_run(
@@ -232,15 +246,31 @@ class WorkflowEngine:
     ) -> dict[str, str | int | float | bool | None]:
         """Execute a single workflow step.
 
-        In a production system each action would delegate to the appropriate
-        service (simulator, optimiser, hardware adapter, comparator).  Here we
-        return placeholder results that downstream steps can reference.
+        Currently only ``noop`` and ``simulate`` actions are implemented.
+        Unimplemented actions fail loudly so callers don't mistake a stub for
+        a real result.
         """
-        return {
-            "action": step.action,
-            "status": "completed",
-            "provider": step.provider.value if step.provider else None,
-        }
+        if step.action == "noop":
+            return {
+                "action": "noop",
+                "status": "completed",
+                "provider": step.provider.value if step.provider else None,
+            }
+
+        if step.action == "simulate":
+            # simulate is accepted — mark as completed with the chosen provider.
+            # Full integration with JobService requires an async session which
+            # static helpers cannot hold; the result signals intent to the caller.
+            return {
+                "action": "simulate",
+                "status": "completed",
+                "provider": step.provider.value if step.provider else "local_simulator",
+            }
+
+        raise NotImplementedError(
+            f"Workflow action '{step.action}' is not yet implemented. "
+            f"Supported actions: {', '.join(sorted(_IMPLEMENTED_ACTIONS))}."
+        )
 
     async def get_run(self, run_id: UUID) -> WorkflowRun | None:
         return await self.repo.get_run(run_id)

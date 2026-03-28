@@ -1,0 +1,47 @@
+groups:
+  - name: qcp-alerts
+    rules:
+      - alert: HighDLQLength
+        expr: qcp_dlq_length > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dead-letter queue is not empty"
+          description: "{{ $value }} messages in DLQ — investigate failed jobs."
+
+      - alert: HighJobFailureRate
+        expr: rate(qcp_jobs_failed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Job failure rate > 0.1/s for 5 min"
+          description: "Provider {{ $labels.provider }} experiencing elevated failures."
+
+      - alert: QueueBacklogGrowing
+        expr: qcp_queue_depth > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job queue backlog exceeding 50 for 10+ min"
+          description: "Workers may be undersized or stuck. Current depth: {{ $value }}."
+
+      - alert: HighExecutionLatency
+        expr: histogram_quantile(0.95, rate(qcp_execution_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95th percentile execution latency > 30s"
+          description: "Provider {{ $labels.provider }} p95 latency is {{ $value }}s."
+
+      - alert: APIDown
+        expr: up{job="qcp-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "QCP API is unreachable"
+          description: "Prometheus cannot scrape the API /metrics endpoint."

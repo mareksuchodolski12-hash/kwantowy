@@ -105,7 +105,7 @@ async def _on_startup() -> None:
     env_local = Path(__file__).parent / "apps" / "web" / ".env.local"
     if raw_key:
         env_local.write_text(
-            f"NEXT_PUBLIC_API_URL=http://localhost:8000\nNEXT_PUBLIC_API_KEY={raw_key}\n"
+            f"NEXT_PUBLIC_API_URL=http://localhost:8000\nQCP_API_KEY={raw_key}\n"
         )
         print(f"[OK] Wrote {env_local}")
     elif not env_local.exists():
@@ -115,7 +115,7 @@ async def _on_startup() -> None:
             raw, _ = await repo.create("local-dev-key")
             await session.commit()
         env_local.write_text(
-            f"NEXT_PUBLIC_API_URL=http://localhost:8000\nNEXT_PUBLIC_API_KEY={raw}\n"
+            f"NEXT_PUBLIC_API_URL=http://localhost:8000\nQCP_API_KEY={raw}\n"
         )
         print(f"[OK] Regenerated API key and wrote {env_local}")
 

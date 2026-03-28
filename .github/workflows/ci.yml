@@ -5,6 +5,14 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -27,8 +35,41 @@ jobs:
       - run: make typecheck
       - run: make test
 
-  build-images:
+  build-and-push:
     runs-on: ubuntu-latest
+    needs: [quality]
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        include:
+          - name: api
+            file: services/api/Dockerfile
+          - name: worker
+            file: workers/quantum-runner/Dockerfile
+          - name: web
+            file: apps/web/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/qcp-${{ matrix.name }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/qcp-${{ matrix.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-images-pr:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -62,8 +103,7 @@ jobs:
           scan-ref: .
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: '0'
-        continue-on-error: true
+          exit-code: '1'
       - uses: anchore/sbom-action@v0
         with:
           path: .

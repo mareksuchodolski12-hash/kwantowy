@@ -1,7 +1,16 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { listJobs, listExperiments, getResult, type Job, type Experiment, type ExecutionResult } from '@/lib/api';
+import {
+  listJobs,
+  listExperiments,
+  getResult,
+  compareResults,
+  type Job,
+  type Experiment,
+  type ExecutionResult,
+  type ResultComparison,
+} from '@/lib/api';
 import ProviderBadge from '@/components/ProviderBadge';
 import ResultChart from '@/components/ResultChart';
 
@@ -44,6 +53,25 @@ export default function ComparisonPage() {
   };
 
   const selected = rows.filter((r) => r.selected);
+  const [comparison, setComparison] = useState<ResultComparison | null>(null);
+  const [comparing, setComparing] = useState(false);
+
+  const handleCompare = async () => {
+    if (selected.length < 2) return;
+    setComparing(true);
+    setComparison(null);
+    try {
+      const resp = await compareResults(
+        selected[0].experimentName,
+        selected.map((r) => r.job.id),
+      );
+      setComparison(resp.comparison);
+    } catch {
+      // fall through — comparison is optional enhancement
+    } finally {
+      setComparing(false);
+    }
+  };
 
   if (loading) {
     return <p className="text-gray-500 py-8 text-center">Loading comparison data…</p>;
@@ -107,9 +135,53 @@ export default function ComparisonPage() {
 
       {selected.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Comparing {selected.length} result{selected.length > 1 ? 's' : ''}
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Comparing {selected.length} result{selected.length > 1 ? 's' : ''}
+            </h3>
+            {selected.length >= 2 && (
+              <button
+                onClick={handleCompare}
+                disabled={comparing}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {comparing ? 'Comparing…' : 'Run Statistical Comparison'}
+              </button>
+            )}
+          </div>
+
+          {comparison && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-3">
+              <h4 className="text-sm font-semibold text-gray-800">Statistical Summary</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                {Object.keys(comparison.fidelity_scores).length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase mb-1">Fidelity Scores</p>
+                    {Object.entries(comparison.fidelity_scores).map(([provider, score]) => (
+                      <div key={provider} className="flex justify-between">
+                        <span className="text-gray-700">{provider}</span>
+                        <span className="font-medium">{(score * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {Object.keys(comparison.distribution_distances).length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase mb-1">Distribution Distances (KL)</p>
+                    {Object.entries(comparison.distribution_distances).map(([provider, dist]) => (
+                      <div key={provider} className="flex justify-between">
+                        <span className="text-gray-700">{provider}</span>
+                        <span className="font-medium">{dist.toFixed(4)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                Total duration: {comparison.total_duration_ms} ms
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {selected.map(({ job, result, experimentName }) => (
               <div key={job.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 space-y-3">
