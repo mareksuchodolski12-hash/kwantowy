@@ -1,4 +1,9 @@
+import sys
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+_PRODUCTION_ENVS = {"production", "prod", "staging"}
 
 
 class Settings(BaseSettings):
@@ -6,7 +11,7 @@ class Settings(BaseSettings):
 
     app_name: str = "quantum-control-plane-api"
     environment: str = "dev"
-    # Default is for local development only; always set QCP_DATABASE_URL in production.
+    # Local-dev fallback only; always set QCP_DATABASE_URL in production.
     database_url: str = "postgresql+asyncpg://quantum:quantum@localhost:5432/quantum_control_plane"
     redis_url: str = "redis://localhost:6379/0"
     queue_name: str = "quantum.jobs"
@@ -32,3 +37,17 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# ── Production guard ──────────────────────────────────────────────────────
+# Refuse to start with default dev credentials in production-like environments.
+if settings.environment.lower() in _PRODUCTION_ENVS:
+    _defaults = {
+        "database_url": "postgresql+asyncpg://quantum:quantum@localhost:5432/quantum_control_plane",
+        "redis_url": "redis://localhost:6379/0",
+    }
+    for _field, _default in _defaults.items():
+        if getattr(settings, _field) == _default:
+            sys.exit(
+                f"FATAL: QCP_{_field.upper()} is still the local-dev default. "
+                f"Set it explicitly for environment={settings.environment!r}."
+            )

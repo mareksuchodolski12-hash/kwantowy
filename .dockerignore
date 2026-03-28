@@ -1,0 +1,50 @@
+# Secrets and environment
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Version control
+.git
+.gitignore
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node artifacts
+node_modules/
+.next/
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Database files
+*.db
+*.sqlite
+local_dev.db
+
+# Certificates / keys
+*.pem
+*.key
+
+# Coverage / logs
+.coverage
+coverage.xml
+htmlcov/
+*.log
+
+# GitHub
+.github/
