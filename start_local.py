@@ -88,36 +88,21 @@ async def _on_startup() -> None:
         await conn.run_sync(Base.metadata.create_all)
     print("[OK] SQLite tables created")
 
-    # Seed API key
+    # Seed API key (deterministic — same approach as Docker entrypoint)
+    DEFAULT_DEV_KEY = "qcp_dev_default_key"
+    raw_key = os.environ.get("QCP_API_KEY") or DEFAULT_DEV_KEY
     async with SessionLocal() as session:
         repo = ApiKeyRepository(session)
-        keys = await repo.list()
-        if keys:
-            print(f"[OK] API key exists: {keys[0].name}")
-            raw_key = None
-        else:
-            raw, _ = await repo.create("local-dev-key")
-            await session.commit()
-            raw_key = raw
-            print(f"[OK] API Key: {raw}")
+        await repo.ensure_raw_key(raw_key, "local-dev-key")
+        await session.commit()
+    print(f"[OK] API key registered: local-dev-key")
 
     # Write apps/web/.env.local so the frontend can authenticate
     env_local = Path(__file__).parent / "apps" / "web" / ".env.local"
-    if raw_key:
-        env_local.write_text(
-            f"NEXT_PUBLIC_API_URL=http://localhost:8000\nQCP_API_KEY={raw_key}\n"
-        )
-        print(f"[OK] Wrote {env_local}")
-    elif not env_local.exists():
-        # Key already exists in DB but .env.local is missing; re-create a fresh key
-        async with SessionLocal() as session:
-            repo = ApiKeyRepository(session)
-            raw, _ = await repo.create("local-dev-key")
-            await session.commit()
-        env_local.write_text(
-            f"NEXT_PUBLIC_API_URL=http://localhost:8000\nQCP_API_KEY={raw}\n"
-        )
-        print(f"[OK] Regenerated API key and wrote {env_local}")
+    env_local.write_text(
+        f"NEXT_PUBLIC_API_URL=http://localhost:8000\nQCP_API_KEY={raw_key}\n"
+    )
+    print(f"[OK] Wrote {env_local}")
 
     # Launch background worker as an asyncio task
     asyncio.create_task(_worker_loop())
